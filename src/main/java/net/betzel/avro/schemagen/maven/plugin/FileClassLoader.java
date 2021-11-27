@@ -1,14 +1,40 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
-import org.apache.commons.collections4.iterators.IteratorEnumeration;
-import org.apache.commons.io.IOUtils;
 import sun.net.www.ParseUtil;
 import sun.security.util.SecurityConstants;
 
-import java.io.*;
-import java.net.*;
-import java.security.*;
-import java.util.*;
+import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilePermission;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.JarURLConnection;
+import java.net.MalformedURLException;
+import java.net.SocketPermission;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.URLConnection;
+import java.net.URLStreamHandler;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.CodeSigner;
+import java.security.CodeSource;
+import java.security.Permission;
+import java.security.PermissionCollection;
+import java.security.Permissions;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.security.ProtectionDomain;
+import java.security.SecureClassLoader;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Objects;
 import java.util.jar.Attributes;
 import java.util.jar.Attributes.Name;
 import java.util.jar.JarEntry;
@@ -17,18 +43,17 @@ import java.util.jar.Manifest;
 
 import static java.security.AccessController.doPrivileged;
 import static java.util.jar.JarFile.MANIFEST_NAME;
-import static org.apache.commons.collections4.IteratorUtils.*;
 
 /**
  * This implements {@link SecureClassLoader} and creates its class path over a given collection of jarFiles or directories. This implements also {@link Closeable}.
  */
 public class FileClassLoader extends SecureClassLoader implements Closeable {
 
-    private final AccessControlContext _acc = AccessController.getContext();
-    private final Collection<JarFile> _jarFiles;
-    private final Collection<File> _directories;
+    private AccessControlContext accessControlContext = AccessController.getContext();
+    private Collection<JarFile> jarFiles;
+    private Collection<File> directories;
 
-    private volatile boolean _closed;
+    private volatile boolean closed;
 
     public FileClassLoader(File classPath) throws IOException {
         this(Collections.singleton(classPath), null);
@@ -44,87 +69,84 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
 
     public FileClassLoader(Iterable<File> classPath, ClassLoader parent) throws IOException {
         super(parent);
-        if (classPath == null) {
-            throw new NullPointerException("The parameter files is null.");
-        }
-        final Collection<JarFile> jarFiles = new ArrayList();
-        final Collection<File> directories = new ArrayList();
+        Objects.requireNonNull(classPath, "The parameter files is missing");
+        Collection<JarFile> jarFiles = new ArrayList();
+        Collection<File> directories = new ArrayList();
         for (File classPathPart : classPath) {
             if (classPathPart.isDirectory()) {
                 directories.add(classPathPart);
             } else {
-                final JarFile jarFile = new JarFile(classPathPart);
+                JarFile jarFile = new JarFile(classPathPart);
                 jarFiles.add(jarFile);
             }
         }
-        _jarFiles = Collections.unmodifiableCollection(jarFiles);
-        _directories = Collections.unmodifiableCollection(directories);
+        this.jarFiles = Collections.unmodifiableCollection(jarFiles);
+        this.directories = Collections.unmodifiableCollection(directories);
     }
 
     @Override
     public URL getResource(String name) {
-        final URL ourResources = findResource(name);
-        final URL result;
-        if (ourResources != null) {
+        URL ourResources = findResource(name);
+        URL result;
+        if (Objects.nonNull(ourResources)) {
             result = ourResources;
         } else {
-            final ClassLoader parent = getParent();
-            result = parent != null ? parent.getResource(name) : null;
+            ClassLoader parent = getParent();
+            result = Objects.nonNull(parent) ? parent.getResource(name) : null;
         }
         return result;
     }
 
     @Override
     public Enumeration<URL> getResources(String name) throws IOException {
-        final Enumeration<URL> localResources = findResources(name);
-        final ClassLoader parent = getParent();
-        // noinspection unchecked
-        final Enumeration<URL> globalResources = parent != null ? parent.getResources(name) : asEnumeration(emptyIterator());
+        Enumeration<URL> localResources = findResources(name);
+        ClassLoader parent = getParent();
+        Enumeration<URL> globalResources = Objects.nonNull(parent) ? parent.getResources(name) : Collections.emptyEnumeration();
         return new Enumeration<URL>() {
 
-            private boolean _local = true;
+            private boolean local = true;
 
             @Override
             public boolean hasMoreElements() {
-                if (_local && !localResources.hasMoreElements()) {
-                    _local = false;
+                if (local && !localResources.hasMoreElements()) {
+                    local = false;
                 }
-                return _local ? localResources.hasMoreElements() : globalResources.hasMoreElements();
+                return local ? localResources.hasMoreElements() : globalResources.hasMoreElements();
             }
 
             @Override
             public URL nextElement() {
-                if (_local && localResources.nextElement() == null) {
-                    _local = false;
+                if (local && Objects.isNull(localResources.nextElement())) {
+                    local = false;
                 }
-                return _local ? localResources.nextElement() : globalResources.nextElement();
+                return local ? localResources.nextElement() : globalResources.nextElement();
             }
         };
     }
 
     @Override
     public synchronized void close() throws IOException {
-        if (!_closed) {
-            _closed = true;
-            for (JarFile jarFile : _jarFiles) {
+        if (!closed) {
+            closed = true;
+            for (JarFile jarFile : jarFiles) {
                 jarFile.close();
             }
         }
     }
 
     public boolean isClosed() {
-        return _closed;
+        return closed;
     }
 
     @Override
     protected synchronized Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
         Class<?> result = findLoadedClass(name);
-        if (result == null) {
+        if (Objects.isNull(result)) {
             try {
                 result = findClass(name);
             } catch (ClassNotFoundException ignored) {
-                final ClassLoader parent = getParent();
-                if (parent != null) {
+                ClassLoader parent = getParent();
+                if (Objects.nonNull(parent)) {
                     result = parent.loadClass(name);
                 }
             }
@@ -136,7 +158,7 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
     }
 
     @Override
-    protected synchronized Class<?> findClass(final String name) throws ClassNotFoundException {
+    protected synchronized Class<?> findClass(String name) throws ClassNotFoundException {
         ensureNotClosed();
         try {
             return doPrivileged(new PrivilegedExceptionAction<Class<?>>() {
@@ -144,33 +166,33 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
                 public Class<?> run() throws Exception {
                     Class<?> result;
                     result = null;
-                    final String path = name.replace('.', '/').concat(".class");
-                    final Iterator<File> i = _directories.iterator();
-                    while (result == null && i.hasNext()) {
-                        final File directory = i.next();
-                        final File file = new File(directory, path);
+                    String path = name.replace('.', '/').concat(".class");
+                    Iterator<File> i = directories.iterator();
+                    while (Objects.isNull(result) && i.hasNext()) {
+                        File directory = i.next();
+                        File file = new File(directory, path);
                         if (file.isFile()) {
                             result = defineClass(name, new DirectoryResource(directory, file));
                         }
                     }
-                    if (result == null) {
-                        final Iterator<JarFile> j = _jarFiles.iterator();
-                        while (result == null && j.hasNext()) {
-                            final JarFile jarFile = j.next();
-                            final JarEntry jarEntry = jarFile.getJarEntry(path);
+                    if (Objects.isNull(result)) {
+                        Iterator<JarFile> j = jarFiles.iterator();
+                        while (Objects.isNull(result) && j.hasNext()) {
+                            JarFile jarFile = j.next();
+                            JarEntry jarEntry = jarFile.getJarEntry(path);
                             if (jarEntry != null) {
                                 result = defineClass(name, new JarResource(jarFile, jarEntry));
                             }
                         }
                     }
-                    if (result == null) {
+                    if (Objects.isNull(result)) {
                         throw new ClassNotFoundException(name);
                     }
                     return result;
                 }
-            }, _acc);
+            }, accessControlContext);
         } catch (PrivilegedActionException e) {
-            final Exception exception = e.getException();
+            Exception exception = e.getException();
             if (exception instanceof ClassNotFoundException) {
                 throw (ClassNotFoundException) exception;
             } else {
@@ -180,13 +202,13 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
     }
 
     private Class<?> defineClass(String name, Resource resource) throws IOException {
-        final int i = name.lastIndexOf('.');
-        final URL packageUrl = resource.getPackageUrl();
+        int i = name.lastIndexOf('.');
+        URL packageUrl = resource.getPackageUrl();
         if (i != -1) {
-            final String packageName = name.substring(0, i);
+            String packageName = name.substring(0, i);
             // Check if package already loaded.
-            final Package pkg = getPackage(packageName);
-            final Manifest man = resource.getManifest();
+            Package pkg = getPackage(packageName);
+            Manifest man = resource.getManifest();
             if (pkg != null) {
                 // Package found, so check package sealing.
                 if (pkg.isSealed()) {
@@ -210,39 +232,39 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
                 }
             }
         }
-        final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-        final InputStream inputStream = resource.openStream();
-        try {
-            IOUtils.copy(inputStream, byteArrayOutputStream);
-        } finally {
-            IOUtils.closeQuietly(inputStream);
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(); InputStream inputStream = resource.openStream()) {
+            byte[] buffer = new byte[8192];
+            int n;
+            while (-1 != (n = inputStream.read(buffer))) {
+                byteArrayOutputStream.write(buffer, 0, n);
+            }
+            byte[] bytes = byteArrayOutputStream.toByteArray();
+            CodeSigner[] signers = resource.getCodeSigners();
+            CodeSource cs = new CodeSource(packageUrl, signers);
+            return defineClass(name, bytes, 0, bytes.length, new ProtectionDomain(cs, new Permissions()));
         }
-        final byte[] bytes = byteArrayOutputStream.toByteArray();
-        final CodeSigner[] signers = resource.getCodeSigners();
-        final CodeSource cs = new CodeSource(packageUrl, signers);
-        return defineClass(name, bytes, 0, bytes.length, new ProtectionDomain(cs, new Permissions()));
     }
 
     @Override
-    protected synchronized URL findResource(final String name) {
+    protected synchronized URL findResource(String name) {
         ensureNotClosed();
         return doPrivileged(new PrivilegedAction<URL>() {
             @Override
             public URL run() {
                 URL result = null;
-                final Iterator<File> i = _directories.iterator();
-                while (result == null && i.hasNext()) {
-                    final File directory = i.next();
-                    final File file = new File(directory, name);
+                Iterator<File> i = directories.iterator();
+                while (Objects.isNull(result) && i.hasNext()) {
+                    File directory = i.next();
+                    File file = new File(directory, name);
                     if (file.isFile()) {
                         result = new DirectoryResource(directory, file).getResourceUrl();
                     }
                 }
-                if (result == null) {
-                    final Iterator<JarFile> j = _jarFiles.iterator();
+                if (Objects.isNull(result)) {
+                    Iterator<JarFile> j = jarFiles.iterator();
                     while (result == null && j.hasNext()) {
-                        final JarFile jarFile = j.next();
-                        final JarEntry jarEntry = jarFile.getJarEntry(name);
+                        JarFile jarFile = j.next();
+                        JarEntry jarEntry = jarFile.getJarEntry(name);
                         if (jarEntry != null) {
                             result = new JarResource(jarFile, jarEntry).getResourceUrl();
                         }
@@ -250,44 +272,44 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
                 }
                 return result;
             }
-        }, _acc);
+        }, accessControlContext);
     }
 
     @Override
-    protected synchronized Enumeration<URL> findResources(final String name) throws IOException {
+    protected synchronized Enumeration<URL> findResources(String name) throws IOException {
         ensureNotClosed();
-        final Iterable<URL> iterable = doPrivileged(new PrivilegedAction<Iterable<URL>>() {
+        Iterable<URL> iterable = doPrivileged(new PrivilegedAction<Iterable<URL>>() {
             @Override
             public Iterable<URL> run() {
-                final Collection<URL> result = new ArrayList<URL>();
-                for (File directory : _directories) {
-                    final File file = new File(directory, name);
+                Collection<URL> result = new ArrayList<URL>();
+                for (File directory : directories) {
+                    File file = new File(directory, name);
                     if (file.isFile()) {
                         result.add(new DirectoryResource(directory, file).getResourceUrl());
                     }
                 }
-                for (JarFile jarFile : _jarFiles) {
-                    final JarEntry jarEntry = jarFile.getJarEntry(name);
+                for (JarFile jarFile : jarFiles) {
+                    JarEntry jarEntry = jarFile.getJarEntry(name);
                     if (jarEntry != null) {
                         result.add(new JarResource(jarFile, jarEntry).getResourceUrl());
                     }
                 }
                 return result;
             }
-        }, _acc);
+        }, accessControlContext);
         //noinspection unchecked
         return new IteratorEnumeration(iterable.iterator());
     }
 
     protected synchronized void ensureNotClosed() {
-        if (_closed) {
+        if (closed) {
             throw new IllegalStateException(this + " is already closed.");
         }
     }
 
     /**
      * This is a copy of {@link URLClassLoader#getPermissions(CodeSource)}.
-     *
+     * <p>
      * Returns the permissions for the given codesource object.
      * The implementation of this method first calls super.getPermissions
      * and then adds permissions based on the URL of the codesource.
@@ -305,13 +327,14 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
      * <p>
      * If the protocol is not "file", then
      * to connect to and accept connections from the URL's host is granted.
+     *
      * @param codesource the codesource
      * @return the permissions granted to the codesource
      */
     @Override
     protected PermissionCollection getPermissions(CodeSource codesource) {
-        final PermissionCollection perms = super.getPermissions(codesource);
-        final URL url = codesource.getLocation();
+        PermissionCollection perms = super.getPermissions(codesource);
+        URL url = codesource.getLocation();
         Permission p;
         URLConnection urlConnection;
         try {
@@ -342,7 +365,7 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
             if (urlConnection instanceof JarURLConnection) {
                 locUrl = ((JarURLConnection) urlConnection).getJarFileURL();
             }
-            final String host = locUrl.getHost();
+            String host = locUrl.getHost();
             if (host != null && (host.length() > 0)) {
                 p = new SocketPermission(host, SecurityConstants.SOCKET_CONNECT_ACCEPT_ACTION);
             }
@@ -351,16 +374,16 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
         // would have this permission
 
         if (p != null) {
-            final SecurityManager sm = System.getSecurityManager();
+            SecurityManager sm = System.getSecurityManager();
             if (sm != null) {
-                final Permission fp = p;
+                Permission fp = p;
                 doPrivileged(new PrivilegedAction<Void>() {
                     @Override
                     public Void run() throws SecurityException {
                         sm.checkPermission(fp);
                         return null;
                     }
-                }, _acc);
+                }, accessControlContext);
             }
             perms.add(p);
         }
@@ -374,7 +397,7 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
      * given manifest.
      */
     private boolean isSealed(String name, Manifest man) {
-        final String path = name.replace('.', '/').concat("/");
+        String path = name.replace('.', '/').concat("/");
         Attributes attr = man.getAttributes(path);
         String sealed = null;
         if (attr != null) {
@@ -390,18 +413,18 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
 
     /**
      * This is a copy of {@link URLClassLoader#getPermissions(CodeSource)}.
-     *
+     * <p>
      * Defines a new package by name in this ClassLoader. The attributes contained in the specified Manifest will be used to obtain package version and sealing
      * information. For sealed packages, the additional URL specifies the code source URL from which the package was loaded.
      *
      * @param name the package name
-     * @param man the Manifest containing package version and sealing information
-     * @param url the code source url for the package, or null if none
+     * @param man  the Manifest containing package version and sealing information
+     * @param url  the code source url for the package, or null if none
      * @return the newly defined Package object
      * @throws IllegalArgumentException if the package name duplicates an existing package either in this class loader or one of its ancestors
      */
     protected Package definePackage(String name, Manifest man, URL url) throws IllegalArgumentException {
-        final String path = name.replace('.', '/').concat("/");
+        String path = name.replace('.', '/').concat("/");
         String specTitle = null;
         String specVersion = null;
         String specVendor = null;
@@ -467,8 +490,8 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
 
     protected static class JarResource extends Resource {
 
-        private final JarFile _jarFile;
-        private final JarEntry _jarEntry;
+        private JarFile _jarFile;
+        private JarEntry _jarEntry;
 
         protected JarResource(JarFile jarFile, JarEntry jarEntry) {
             if (jarFile == null) {
@@ -533,8 +556,8 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
 
     protected static class DirectoryResource extends Resource {
 
-        private final File _directory;
-        private final File _file;
+        private File _directory;
+        private File _file;
 
         protected DirectoryResource(File directory, File file) {
             if (directory == null) {
@@ -581,14 +604,11 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
 
         @Override
         public Manifest getManifest() throws IOException {
-            final File manifestFile = new File(_directory, MANIFEST_NAME);
-            final Manifest manifest;
+            File manifestFile = new File(_directory, MANIFEST_NAME);
+            Manifest manifest;
             if (manifestFile.isFile()) {
-                final FileInputStream is = new FileInputStream(manifestFile);
-                try {
-                    manifest = new Manifest(is);
-                } finally {
-                    IOUtils.closeQuietly(is);
+                try (FileInputStream fileInputStream = new FileInputStream(manifestFile)) {
+                    manifest = new Manifest(fileInputStream);
                 }
             } else {
                 manifest = null;

@@ -8,42 +8,42 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
-// Iterates over an Avro schema
 public class AvroSchemaIterator implements Iterable<Schema>, Iterator<Schema> {
 
-    private final Deque<Schema> nodesToIterate;
-    private final Set<Integer> iteratedNodes;
+    private Deque<Schema> nodesToIterate;
+    private Set<Integer> iteratedNodes;
     private Schema currentSchema;
 
     public AvroSchemaIterator(Schema rootSchema) {
-        nodesToIterate = new LinkedList<>();
-        iteratedNodes = new HashSet<>();
+        Objects.requireNonNull(rootSchema, "Missing Schema instance!");
+        nodesToIterate = new LinkedList();
+        iteratedNodes = new HashSet();
         nodesToIterate.addFirst(rootSchema);
     }
 
-    // Returns the child nodes of schema
     private static List<Schema> getChildNodes(Schema schema) {
-        List<Schema> children = new ArrayList<>();
+        List<Schema> childNodes = new ArrayList<>();
 
         switch (schema.getType()) {
             case RECORD:
                 for (Schema.Field field : schema.getFields()) {
-                    children.add(field.schema());
+                    childNodes.add(field.schema());
                 }
                 break;
             case UNION:
-                children.addAll(schema.getTypes());
+                childNodes.addAll(schema.getTypes());
                 break;
             case ARRAY:
-                children.add(schema.getElementType());
+                childNodes.add(schema.getElementType());
                 break;
             case MAP:
-                children.add(schema.getValueType());
+                childNodes.add(schema.getValueType());
                 break;
         }
-        return children;
+        return childNodes;
     }
 
     @Override
@@ -55,9 +55,9 @@ public class AvroSchemaIterator implements Iterable<Schema>, Iterator<Schema> {
     public boolean hasNext() {
         while (!nodesToIterate.isEmpty()) {
             currentSchema = nodesToIterate.removeFirst();
-            Integer objectNum = System.identityHashCode(currentSchema);
-            if (!iteratedNodes.contains(objectNum)) {
-                iteratedNodes.add(objectNum);
+            Integer identityHashCode = System.identityHashCode(currentSchema);
+            if (!iteratedNodes.contains(identityHashCode)) {
+                iteratedNodes.add(identityHashCode);
                 nodesToIterate.addAll(getChildNodes(currentSchema));
                 return true;
             }
@@ -69,4 +69,5 @@ public class AvroSchemaIterator implements Iterable<Schema>, Iterator<Schema> {
     public Schema next() {
         return currentSchema;
     }
+
 }

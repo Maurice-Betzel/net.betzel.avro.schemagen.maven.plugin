@@ -11,7 +11,12 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 
 @Mojo(name = "schema-generator", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
 public class SchemaGeneratorMojo extends AbstractMojo {
@@ -45,11 +50,12 @@ public class SchemaGeneratorMojo extends AbstractMojo {
         if (!classPathDir.exists()) {
             throw new SchemaGenerationException("Class path directory " + sourceClassPath + " does not exist!");
         }
-        if (!targetSchemaPathDir.isDirectory()) {
-            throw new SchemaGenerationException("Avro schema path directory " + targetSchemaPathDir + " is not a directory!");
-        }
         if (!targetSchemaPathDir.exists()) {
-            throw new SchemaGenerationException("Avro schema path directory " + targetSchemaPathDir + " does not exist!");
+            try {
+                Files.createDirectories(targetSchemaPathDir.toPath());
+            } catch (IOException e) {
+                throw new SchemaGenerationException("Cannot create directory " + targetSchemaPathDir + "!");
+            }
         }
 
 
@@ -60,7 +66,9 @@ public class SchemaGeneratorMojo extends AbstractMojo {
             getLog().info("Generating AVRO schema for class " + clazz.getCanonicalName());
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator();
             Schema schema = schemaGenerator.generateSchema(clazz);
-            getLog().info("Schema : " + schema.toString(true));
+            getLog().debug("Schema : " + schema.toString(true));
+            Path schemaPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName()+".avsc");
+            Files.write(schemaPath, schema.toString(true).getBytes(StandardCharsets.UTF_8));
         } catch (IOException | ClassNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e.getCause());
         }
@@ -123,7 +131,7 @@ public class SchemaGeneratorMojo extends AbstractMojo {
 
     private boolean isWindows() {
         String osName = System.getProperty("os.name");
-        if (osName == null) {
+        if (Objects.isNull(osName)) {
             return false;
         }
         return osName.startsWith("Windows");
