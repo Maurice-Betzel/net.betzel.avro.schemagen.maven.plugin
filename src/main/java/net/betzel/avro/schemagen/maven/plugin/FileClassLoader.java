@@ -51,7 +51,7 @@ import static java.util.jar.JarFile.MANIFEST_NAME;
 /**
  * This implements {@link SecureClassLoader} and creates its class path over a given collection of jarFiles or directories. This implements also {@link Closeable}.
  */
-public class FileClassLoader extends SecureClassLoader implements Closeable {
+public final class FileClassLoader extends SecureClassLoader implements Closeable {
 
     private static final String FILE_READ_ACTION = "read";
     private static final String SOCKET_CONNECT_ACCEPT_ACTION = "connect,accept";

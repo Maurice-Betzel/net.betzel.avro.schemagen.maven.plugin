@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Mojo(name = "schema-generator", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
-public class SchemaGeneratorMojo extends AbstractMojo {
+public final class SchemaGeneratorMojo extends AbstractMojo {
 
     @Parameter(property = "classPath", defaultValue = "${project.build.outputDirectory}", required = true)
     String classPath;
