@@ -1,7 +1,6 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
-import sun.net.www.ParseUtil;
-import sun.security.util.SecurityConstants;
+import sun.nio.cs.ThreadLocalCoders;
 
 import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
@@ -17,6 +16,11 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CoderResult;
+import java.nio.charset.CodingErrorAction;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.CodeSigner;
@@ -48,6 +52,9 @@ import static java.util.jar.JarFile.MANIFEST_NAME;
  * This implements {@link SecureClassLoader} and creates its class path over a given collection of jarFiles or directories. This implements also {@link Closeable}.
  */
 public class FileClassLoader extends SecureClassLoader implements Closeable {
+
+    private static final String FILE_READ_ACTION = "read";
+    private static final String SOCKET_CONNECT_ACCEPT_ACTION = "connect,accept";
 
     private AccessControlContext accessControlContext = AccessController.getContext();
     private Collection<JarFile> jarFiles;
@@ -351,15 +358,15 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
             String path = p.getName();
             if (path.endsWith(File.separator)) {
                 path += "-";
-                p = new FilePermission(path, SecurityConstants.FILE_READ_ACTION);
+                p = new FilePermission(path, FILE_READ_ACTION);
             }
         } else if ((p == null) && (url.getProtocol().equals("file"))) {
             String path = url.getFile().replace('/', File.separatorChar);
-            path = ParseUtil.decode(path);
+            path = decode(path);
             if (path.endsWith(File.separator)) {
                 path += "-";
             }
-            p = new FilePermission(path, SecurityConstants.FILE_READ_ACTION);
+            p = new FilePermission(path, FILE_READ_ACTION);
         } else {
             URL locUrl = url;
             if (urlConnection instanceof JarURLConnection) {
@@ -367,7 +374,7 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
             }
             String host = locUrl.getHost();
             if (host != null && (host.length() > 0)) {
-                p = new SocketPermission(host, SecurityConstants.SOCKET_CONNECT_ACCEPT_ACTION);
+                p = new SocketPermission(host, SOCKET_CONNECT_ACCEPT_ACTION);
             }
         }
         // make sure the person that created this class loader
@@ -473,6 +480,57 @@ public class FileClassLoader extends SecureClassLoader implements Closeable {
         }
         return definePackage(name, specTitle, specVersion, specVendor, implTitle, implVersion, implVendor,
                 sealBase);
+    }
+
+    /**
+     * Returns a new String constructed from the specified String by replacing
+     * the URL escape sequences and UTF8 encoding with the characters they
+     * represent.
+     */
+    public static String decode(String string) {
+        int n = string.length();
+        if ((n == 0) || (string.indexOf('%') < 0))
+            return string;
+
+        StringBuilder stringBuilder = new StringBuilder(n);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(n);
+        CharBuffer charBuffer = CharBuffer.allocate(n);
+        CharsetDecoder charsetDecoder = ThreadLocalCoders.decoderFor("UTF-8").onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+        char c = string.charAt(0);
+        for (int i = 0; i < n; ) {
+            assert c == string.charAt(i);
+            if (c != '%') {
+                stringBuilder.append(c);
+                if (++i >= n)
+                    break;
+                c = string.charAt(i);
+                continue;
+            }
+            byteBuffer.clear();
+            for (; ; ) {
+                assert (n - i >= 2);
+                try {
+                    byteBuffer.put((byte) Integer.parseInt(string.substring(i + 1, i + 3), 16));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException();
+                }
+                i += 3;
+                if (i >= n)
+                    break;
+                c = string.charAt(i);
+                if (c != '%')
+                    break;
+            }
+            byteBuffer.flip();
+            charBuffer.clear();
+            charsetDecoder.reset();
+            CoderResult cr = charsetDecoder.decode(byteBuffer, charBuffer, true);
+            if (cr.isError()) throw new IllegalArgumentException("Error decoding percent encoded characters");
+            cr = charsetDecoder.flush(charBuffer);
+            if (cr.isError()) throw new IllegalArgumentException("Error decoding percent encoded characters");
+            stringBuilder.append(charBuffer.flip().toString());
+        }
+        return stringBuilder.toString();
     }
 
     protected static abstract class Resource {
