@@ -61,6 +61,7 @@ public class SchemaGeneratorMojo extends AbstractMojo {
                 for (int i = 0; i < polymorphicClassFiles.size(); i++) {
                     String polymorphicClassFile = polymorphicClassFiles.get(i);
                     Class polymorphicClazz = fileClassLoader.loadClass(polymorphicClassFile);
+                    getLog().info("Adding polymorphic class " + polymorphicClazz.getCanonicalName());
                     types[i] = polymorphicClazz;
                 }
                 schemaGenerator.declarePolymorphicType(types);
@@ -68,6 +69,7 @@ public class SchemaGeneratorMojo extends AbstractMojo {
             Schema schema = schemaGenerator.generateSchema(clazz);
             getLog().debug("Schema : " + schema.toString(true));
             Path schemaPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName() + ".avsc");
+            getLog().info("Writing AVRO schema to " + schemaPath);
             Files.write(schemaPath, schema.toString(true).getBytes(StandardCharsets.UTF_8));
         } catch (IOException | ClassNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e.getCause());
