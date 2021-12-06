@@ -7,6 +7,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +54,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
             }
         }
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
+        getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
             getLog().info("Generating AVRO schema for class " + clazz.getCanonicalName());
