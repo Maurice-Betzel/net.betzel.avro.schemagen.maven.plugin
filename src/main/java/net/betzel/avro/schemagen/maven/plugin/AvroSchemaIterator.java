@@ -13,8 +13,8 @@ import java.util.Set;
 
 public class AvroSchemaIterator implements Iterable<Schema>, Iterator<Schema> {
 
-    private Deque<Schema> nodesToIterate;
-    private Set<Integer> iteratedNodes;
+    private final Deque<Schema> nodesToIterate;
+    private final Set<Integer> iteratedNodes;
     private Schema currentSchema;
 
     public AvroSchemaIterator(Schema rootSchema) {

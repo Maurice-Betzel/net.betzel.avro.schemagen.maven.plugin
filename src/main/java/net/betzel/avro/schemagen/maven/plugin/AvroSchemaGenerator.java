@@ -1,6 +1,7 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
 import org.apache.avro.AvroRuntimeException;
+import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.reflect.ReflectData;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -23,11 +25,11 @@ import java.util.regex.Pattern;
 
 public final class AvroSchemaGenerator {
 
-    private ReflectData reflectData;
-    private Map<String, Set<Schema>> polymorphicTypeSchemas;
-    private RecordCache recordCache;
-    private Map<String, Schema> customSchemas;
     private static final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
+    private final ReflectData reflectData;
+    private final Map<String, Set<Schema>> polymorphicTypeSchemas;
+    private final RecordCache recordCache;
+    private final Map<String, Schema> customSchemas;
 
     public AvroSchemaGenerator() {
         this(new ReflectData());
@@ -261,9 +263,36 @@ public final class AvroSchemaGenerator {
     }
 
     // Create a schema for type
-    public Schema generateSchema(Type type) {
-        Schema schema = reflectData.getSchema(type);
-        return polymorphizeSchema(schema);
+    public Schema generateSchema(Class clazz) {
+        Schema schema = reflectData.getSchema(clazz);
+        return polymorphicTypeSchemas.isEmpty() ? schema : polymorphizeSchema(schema);
+    }
+
+    // Create a protocol for interface
+    public Protocol generateProtocol(Class clazz) {
+        Protocol protocol = reflectData.getProtocol(clazz);
+        return polymorphicTypeSchemas.isEmpty() ? protocol : polymorphizeProtocol(protocol);
+    }
+
+    private Protocol polymorphizeProtocol(Protocol protocol) {
+        Protocol polymorphicProtocol = new Protocol(protocol.getName(), protocol.getDoc(), protocol.getNamespace());
+        for (Map.Entry<String, Object> entry : protocol.getObjectProps().entrySet()) {
+            polymorphicProtocol.addProp(entry.getKey(), entry.getValue());
+        }
+        Collection<Schema> namedTypes = new LinkedHashSet();
+        for (Schema schema : protocol.getTypes()) {
+            namedTypes.add(polymorphizeSchema(schema));
+        }
+        polymorphicProtocol.setTypes(namedTypes);
+        Map<String, Protocol.Message> polymorphicMessage = polymorphicProtocol.getMessages();
+        for (Protocol.Message message : protocol.getMessages().values()) {
+            if (message.isOneWay()) {
+                polymorphicMessage.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest())));
+            } else {
+                polymorphicMessage.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest()), polymorphizeSchema(message.getResponse()), message.getErrors()));
+            }
+        }
+        return polymorphicProtocol;
     }
 
     // Return whether unionType is a named type

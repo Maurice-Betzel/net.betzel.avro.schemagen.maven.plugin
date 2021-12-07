@@ -1,5 +1,6 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
+import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -7,8 +8,6 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.plugins.annotations.ResolutionScope;
-import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,23 +56,32 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
-            getLog().info("Generating AVRO schema for class " + clazz.getCanonicalName());
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator();
-            if (Objects.nonNull(polymorphicClassFiles) && !polymorphicClassFiles.isEmpty()) {
-                Type[] types = new Type[polymorphicClassFiles.size()];
-                for (int i = 0; i < polymorphicClassFiles.size(); i++) {
-                    String polymorphicClassFile = polymorphicClassFiles.get(i);
-                    Class polymorphicClazz = fileClassLoader.loadClass(polymorphicClassFile);
-                    getLog().info("Adding polymorphic class " + polymorphicClazz.getCanonicalName());
-                    types[i] = polymorphicClazz;
+            if (clazz.isInterface()) {
+                getLog().info("Generating AVRO protocol for class " + clazz.getCanonicalName());
+                Protocol protocol = schemaGenerator.generateProtocol(clazz);
+                getLog().debug("Schema : " + protocol.toString(true));
+                Path protocolPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName() + ".avpr");
+                getLog().info("Writing AVRO protocol to " + protocolPath);
+                Files.write(protocolPath, protocol.toString(true).getBytes(StandardCharsets.UTF_8));
+            } else {
+                getLog().info("Generating AVRO schema for class " + clazz.getCanonicalName());
+                if (Objects.nonNull(polymorphicClassFiles) && !polymorphicClassFiles.isEmpty()) {
+                    Type[] types = new Type[polymorphicClassFiles.size()];
+                    for (int i = 0; i < polymorphicClassFiles.size(); i++) {
+                        String polymorphicClassFile = polymorphicClassFiles.get(i);
+                        Class polymorphicClazz = fileClassLoader.loadClass(polymorphicClassFile);
+                        getLog().info("Adding polymorphic class " + polymorphicClazz.getCanonicalName());
+                        types[i] = polymorphicClazz;
+                    }
+                    schemaGenerator.declarePolymorphicType(types);
                 }
-                schemaGenerator.declarePolymorphicType(types);
+                Schema schema = schemaGenerator.generateSchema(clazz);
+                getLog().debug("Schema : " + schema.toString(true));
+                Path schemaPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName() + ".avsc");
+                getLog().info("Writing AVRO schema to " + schemaPath);
+                Files.write(schemaPath, schema.toString(true).getBytes(StandardCharsets.UTF_8));
             }
-            Schema schema = schemaGenerator.generateSchema(clazz);
-            getLog().debug("Schema : " + schema.toString(true));
-            Path schemaPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName() + ".avsc");
-            getLog().info("Writing AVRO schema to " + schemaPath);
-            Files.write(schemaPath, schema.toString(true).getBytes(StandardCharsets.UTF_8));
         } catch (IOException | ClassNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e.getCause());
         }

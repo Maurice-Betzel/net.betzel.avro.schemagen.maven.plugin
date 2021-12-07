@@ -56,9 +56,9 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
     private static final String FILE_READ_ACTION = "read";
     private static final String SOCKET_CONNECT_ACCEPT_ACTION = "connect,accept";
 
-    private AccessControlContext accessControlContext = AccessController.getContext();
-    private Collection<JarFile> jarFiles;
-    private Collection<File> directories;
+    private final AccessControlContext accessControlContext = AccessController.getContext();
+    private final Collection<JarFile> jarFiles;
+    private final Collection<File> directories;
 
     private volatile boolean closed;
 
@@ -89,6 +89,57 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
         }
         this.jarFiles = Collections.unmodifiableCollection(jarFiles);
         this.directories = Collections.unmodifiableCollection(directories);
+    }
+
+    /**
+     * Returns a new String constructed from the specified String by replacing
+     * the URL escape sequences and UTF8 encoding with the characters they
+     * represent.
+     */
+    public static String decode(String string) {
+        int n = string.length();
+        if ((n == 0) || (string.indexOf('%') < 0))
+            return string;
+
+        StringBuilder stringBuilder = new StringBuilder(n);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(n);
+        CharBuffer charBuffer = CharBuffer.allocate(n);
+        CharsetDecoder charsetDecoder = ThreadLocalCoders.decoderFor("UTF-8").onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
+        char c = string.charAt(0);
+        for (int i = 0; i < n; ) {
+            assert c == string.charAt(i);
+            if (c != '%') {
+                stringBuilder.append(c);
+                if (++i >= n)
+                    break;
+                c = string.charAt(i);
+                continue;
+            }
+            byteBuffer.clear();
+            for (; ; ) {
+                assert (n - i >= 2);
+                try {
+                    byteBuffer.put((byte) Integer.parseInt(string.substring(i + 1, i + 3), 16));
+                } catch (NumberFormatException e) {
+                    throw new IllegalArgumentException();
+                }
+                i += 3;
+                if (i >= n)
+                    break;
+                c = string.charAt(i);
+                if (c != '%')
+                    break;
+            }
+            byteBuffer.flip();
+            charBuffer.clear();
+            charsetDecoder.reset();
+            CoderResult cr = charsetDecoder.decode(byteBuffer, charBuffer, true);
+            if (cr.isError()) throw new IllegalArgumentException("Error decoding percent encoded characters");
+            cr = charsetDecoder.flush(charBuffer);
+            if (cr.isError()) throw new IllegalArgumentException("Error decoding percent encoded characters");
+            stringBuilder.append(charBuffer.flip());
+        }
+        return stringBuilder.toString();
     }
 
     @Override
@@ -482,57 +533,6 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
                 sealBase);
     }
 
-    /**
-     * Returns a new String constructed from the specified String by replacing
-     * the URL escape sequences and UTF8 encoding with the characters they
-     * represent.
-     */
-    public static String decode(String string) {
-        int n = string.length();
-        if ((n == 0) || (string.indexOf('%') < 0))
-            return string;
-
-        StringBuilder stringBuilder = new StringBuilder(n);
-        ByteBuffer byteBuffer = ByteBuffer.allocate(n);
-        CharBuffer charBuffer = CharBuffer.allocate(n);
-        CharsetDecoder charsetDecoder = ThreadLocalCoders.decoderFor("UTF-8").onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
-        char c = string.charAt(0);
-        for (int i = 0; i < n; ) {
-            assert c == string.charAt(i);
-            if (c != '%') {
-                stringBuilder.append(c);
-                if (++i >= n)
-                    break;
-                c = string.charAt(i);
-                continue;
-            }
-            byteBuffer.clear();
-            for (; ; ) {
-                assert (n - i >= 2);
-                try {
-                    byteBuffer.put((byte) Integer.parseInt(string.substring(i + 1, i + 3), 16));
-                } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException();
-                }
-                i += 3;
-                if (i >= n)
-                    break;
-                c = string.charAt(i);
-                if (c != '%')
-                    break;
-            }
-            byteBuffer.flip();
-            charBuffer.clear();
-            charsetDecoder.reset();
-            CoderResult cr = charsetDecoder.decode(byteBuffer, charBuffer, true);
-            if (cr.isError()) throw new IllegalArgumentException("Error decoding percent encoded characters");
-            cr = charsetDecoder.flush(charBuffer);
-            if (cr.isError()) throw new IllegalArgumentException("Error decoding percent encoded characters");
-            stringBuilder.append(charBuffer.flip().toString());
-        }
-        return stringBuilder.toString();
-    }
-
     protected static abstract class Resource {
 
         public abstract InputStream openStream() throws IOException;
@@ -548,8 +548,8 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
 
     protected static class JarResource extends Resource {
 
-        private JarFile _jarFile;
-        private JarEntry _jarEntry;
+        private final JarFile _jarFile;
+        private final JarEntry _jarEntry;
 
         protected JarResource(JarFile jarFile, JarEntry jarEntry) {
             if (jarFile == null) {
@@ -614,8 +614,8 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
 
     protected static class DirectoryResource extends Resource {
 
-        private File _directory;
-        private File _file;
+        private final File _directory;
+        private final File _file;
 
         protected DirectoryResource(File directory, File file) {
             if (directory == null) {
