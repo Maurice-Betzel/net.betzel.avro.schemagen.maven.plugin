@@ -25,11 +25,7 @@ public class AvroEncoderDecoder<T> {
 
     public AvroEncoderDecoder(Schema schema, ReflectData reflectData) {
         this.schema = schema;
-        if (Objects.isNull(reflectData)) {
-            this.reflectData = ReflectData.get();
-        } else {
-            this.reflectData = reflectData;
-        }
+        this.reflectData = Objects.isNull(reflectData) ? ReflectData.get() : reflectData;
     }
 
     public void encodeAvro(OutputStream outputStream, T type) throws IOException {

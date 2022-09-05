@@ -93,7 +93,7 @@ public class ClassLoaderUtils {
             while (resources.hasMoreElements())
                 stringBuffer.append(currentIdent).append("-> loader resource element: ").append(resources.nextElement()).append(lineBreak);
         } catch (IOException ioe) {
-            stringBuffer.append(currentIdent).append("-> err: can't get resource elements: ").append(ioe.getMessage()).append(lineBreak);
+            stringBuffer.append(currentIdent).append("-> error: can't get resource elements: ").append(ioe.getMessage()).append(lineBreak);
         }
         ClassLoader parent = classLoader.getParent();
         return stringBuffer + showClassLoaderHierarchy(parent, lineBreak, tabText, indent + 1);

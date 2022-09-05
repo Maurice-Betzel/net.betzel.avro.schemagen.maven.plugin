@@ -9,6 +9,7 @@ import org.apache.avro.specific.SpecificData;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
@@ -26,21 +27,20 @@ import java.util.regex.Pattern;
 public final class AvroSchemaGenerator {
 
     private static final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
+
+    private final boolean allowNullFields;
     private final ReflectData reflectData;
-    private final Map<String, Set<Schema>> polymorphicTypeSchemas;
-    private final RecordCache recordCache;
-    private final Map<String, Schema> customSchemas;
+    private final RecordCache recordCache = new RecordCache();
+    private final Map<String, Schema> customSchemas = new HashMap();
+    private final Map<String, Set<Schema>> polymorphicTypeSchemas = new HashMap();
 
-    public AvroSchemaGenerator() {
-        this(new ReflectData());
-    }
-
-    public AvroSchemaGenerator(ReflectData reflectData) {
-        Objects.requireNonNull(reflectData, "Missing ReflectData instance!");
-        this.reflectData = reflectData;
-        polymorphicTypeSchemas = new HashMap();
-        recordCache = new RecordCache();
-        customSchemas = new HashMap();
+    public AvroSchemaGenerator(boolean allowNullFields) {
+        this.allowNullFields = allowNullFields;
+        if (allowNullFields) {
+            this.reflectData = new ReflectData.AllowNull();
+        } else {
+            this.reflectData = new ReflectData();
+        }
     }
 
     public static String unionTypesToString(Schema schema) {
@@ -55,6 +55,7 @@ public final class AvroSchemaGenerator {
         return String.join(", ", typeNames);
     }
 
+    // register polymorphic types
     public void declarePolymorphicType(Type... types) {
         // Declare a polymorphic type
         recordCache.clear();
@@ -74,31 +75,21 @@ public final class AvroSchemaGenerator {
         }
     }
 
-    private Schema computeNewRecordSchema(Schema schema) {
+    // Create a schema for type
+    public Schema generateSchema(Class clazz) {
+        Schema schema = reflectData.getSchema(clazz);
+        return polymorphicTypeSchemas.isEmpty() ? schema : polymorphizeSchema(schema);
+    }
 
-        List<Field> newFields = new ArrayList();
-        // Create a new schema for each of the fields
-        for (Field field : schema.getFields()) {
-            Schema newFieldSchema;
-            Schema oldFieldSchema = field.schema();
-            switch (oldFieldSchema.getType()) {
-                case ARRAY:
-                    newFieldSchema = getPolymorphicTypes(Schema.createArray(getPolymorphicTypes(oldFieldSchema.getElementType())));
-                    break;
-                case MAP:
-                    newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));
-                    break;
-                default:
-                    newFieldSchema = getPolymorphicTypes(oldFieldSchema);
-                    break;
-            }
-            newFields.add(new Field(field.name(), newFieldSchema, field.doc(), field.defaultVal(), field.order()));
-        }
-        return recordCache.set(schema, newFields);
+    // Create a protocol for interface
+    public Protocol generateProtocol(Class clazz) {
+        Protocol protocol = reflectData.getProtocol(clazz);
+        return polymorphicTypeSchemas.isEmpty() ? protocol : polymorphizeProtocol(protocol);
     }
 
     public Schema polymorphizeSchema(Schema rootSchema) {
-        for (Schema schema : new AvroSchemaIterator(rootSchema)) {
+        AvroSchemaIterator avroSchemaIterator = new AvroSchemaIterator(rootSchema);
+        for (Schema schema : avroSchemaIterator) {
             if (!Objects.equals(schema.getType(), Schema.Type.RECORD)) {
                 continue;
             }
@@ -153,6 +144,49 @@ public final class AvroSchemaGenerator {
         }
     }
 
+    private Schema computeNewRecordSchema(Schema schema) {
+        List<Field> newFields = new ArrayList();
+        // Create a new schema for each of the fields
+        for (Field field : schema.getFields()) {
+            Schema newFieldSchema;
+            Schema oldFieldSchema = field.schema();
+            switch (oldFieldSchema.getType()) {
+                case ARRAY:
+                    newFieldSchema = getPolymorphicTypes(Schema.createArray(getPolymorphicTypes(oldFieldSchema.getElementType())));
+                    break;
+                case MAP:
+                    newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));
+                    break;
+                case RECORD:
+                    newFieldSchema = getPolymorphicTypes(oldFieldSchema);
+                    break;
+                case UNION:
+                    List<Schema> schemas = oldFieldSchema.getTypes();
+                    boolean typeNull = false;
+                    boolean typeRecord = false;
+                    Schema recordSchema = null;
+                    for (Schema subSchema : schemas) {
+                        if (subSchema.getType().equals(Schema.Type.NULL)) {
+                            typeNull = true;
+                        }
+                        if (subSchema.getType().equals(Schema.Type.RECORD)) {
+                            typeRecord = true;
+                            recordSchema = subSchema;
+                        }
+                    }
+                    if (typeNull && typeRecord) {
+                        newFieldSchema = getPolymorphicTypes(recordSchema);
+                        break;
+                    }
+                default:
+                    newFieldSchema = oldFieldSchema;
+                    break;
+            }
+            newFields.add(new Field(field.name(), newFieldSchema, field.doc(), field.defaultVal(), field.order()));
+        }
+        return recordCache.set(schema, newFields);
+    }
+
     public Schema getPolymorphicTypes(Schema schema) {
         // Get the polymorphic types for schema
         switch (schema.getType()) {
@@ -167,6 +201,7 @@ public final class AvroSchemaGenerator {
         if (schema.getType() != Schema.Type.UNION) {
             List<Schema> newTypes = new ArrayList();
             newTypes.add(Schema.create(Schema.Type.NULL));
+
             newTypes.add(schema);
             schema = Schema.createUnion(newTypes);
         }
@@ -188,6 +223,28 @@ public final class AvroSchemaGenerator {
             polyTypes.addAll(subTypes);
         }
         return Schema.createUnion(orderUnionSchemas(finalSchemaTypes));
+    }
+
+    /**
+     * Create and return a union of the null schema and the provided schema.
+     */
+    public static Schema makeNullable(Schema schema) {
+        if (schema.getType() == Schema.Type.UNION) {
+            // check to see if the union already contains NULL
+            for (Schema subType : schema.getTypes()) {
+                if (subType.getType() == Schema.Type.NULL) {
+                    return schema;
+                }
+            }
+            // add null as the first type in a new union
+            List<Schema> withNull = new ArrayList<>();
+            withNull.add(Schema.create(Schema.Type.NULL));
+            withNull.addAll(schema.getTypes());
+            return Schema.createUnion(withNull);
+        } else {
+            // create a union with null
+            return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), schema));
+        }
     }
 
     private List<Schema> orderUnionSchemas(List<Schema> unionSchemas) {
@@ -262,18 +319,6 @@ public final class AvroSchemaGenerator {
         return orderedSchemas;
     }
 
-    // Create a schema for type
-    public Schema generateSchema(Class clazz) {
-        Schema schema = reflectData.getSchema(clazz);
-        return polymorphicTypeSchemas.isEmpty() ? schema : polymorphizeSchema(schema);
-    }
-
-    // Create a protocol for interface
-    public Protocol generateProtocol(Class clazz) {
-        Protocol protocol = reflectData.getProtocol(clazz);
-        return polymorphicTypeSchemas.isEmpty() ? protocol : polymorphizeProtocol(protocol);
-    }
-
     private Protocol polymorphizeProtocol(Protocol protocol) {
         Protocol polymorphicProtocol = new Protocol(protocol.getName(), protocol.getDoc(), protocol.getNamespace());
         for (Map.Entry<String, Object> entry : protocol.getObjectProps().entrySet()) {
@@ -284,12 +329,18 @@ public final class AvroSchemaGenerator {
             namedTypes.add(polymorphizeSchema(schema));
         }
         polymorphicProtocol.setTypes(namedTypes);
-        Map<String, Protocol.Message> polymorphicMessage = polymorphicProtocol.getMessages();
+        Map<String, Protocol.Message> polymorphicMessages = polymorphicProtocol.getMessages();
         for (Protocol.Message message : protocol.getMessages().values()) {
             if (message.isOneWay()) {
-                polymorphicMessage.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest())));
+                polymorphicMessages.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest())));
             } else {
-                polymorphicMessage.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest()), polymorphizeSchema(message.getResponse()), message.getErrors()));
+                //System.out.println(message.getName());
+                Schema requestSchema = message.getRequest();
+                Schema polymorphRequestSchema = polymorphizeSchema(requestSchema);
+                Schema responseSchema = message.getResponse();
+                Schema polymorphResponseSchema = polymorphizeSchema(responseSchema);
+
+                polymorphicMessages.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest()), polymorphizeSchema(message.getResponse()), message.getErrors()));
             }
         }
         return polymorphicProtocol;
@@ -321,84 +372,8 @@ public final class AvroSchemaGenerator {
         }
     }
 
-    // A cache of record schemas
-    private static class RecordCache {
-
-        private final Map<String, Schema> cachedRecords;
-        private final Set<String> emptyCachedRecords;
-
-        public RecordCache() {
-            cachedRecords = new HashMap();
-            emptyCachedRecords = new HashSet();
-        }
-
-        public void clear() {
-            cachedRecords.clear();
-            emptyCachedRecords.clear();
-        }
-
-        // Create a schema for template
-        public Schema create(Schema template) {
-            if (template.getType() != Schema.Type.RECORD) {
-                String message = String.format("Attempted to cache non-Record schema of type %s: %s", template.getType(), template.getFullName());
-                throw new SchemaGenerationException(message);
-            }
-            String fullName = template.getFullName();
-            if (cachedRecords.containsKey(fullName)) {
-                String message = String.format("Attempted to cache schema for %s but it already exists", fullName);
-                throw new SchemaGenerationException(message);
-            }
-            Schema newSchema = Schema.createRecord(template.getName(), template.getDoc(), template.getNamespace(), template.isError());
-            cachedRecords.put(fullName, newSchema);
-            emptyCachedRecords.add(SpecificData.getClassName(template));
-            return newSchema;
-        }
-
-        public Schema get(Schema schema) {
-            return get(schema.getFullName());
-        }
-
-        public Schema get(String fullName) {
-            return cachedRecords.get(fullName);
-        }
-
-        // Get a schema for s or create it
-        public Schema getOrCreate(Schema schema) {
-            Schema newSchema = get(schema);
-            if (Objects.isNull(newSchema)) {
-                newSchema = create(schema);
-            }
-            return newSchema;
-        }
-
-        // Set the fields for the schema
-        public Schema set(Schema schema, List<Field> fields) {
-            String fullName = SpecificData.getClassName(schema);
-            Schema newSchema = getOrCreate(schema);
-            if (!emptyCachedRecords.contains(fullName)) {
-                String errMsg = "Fields have already been set for " + fullName;
-                throw new SchemaGenerationException(errMsg);
-            }
-            newSchema.setFields(fields);
-            emptyCachedRecords.remove(fullName);
-            return newSchema;
-        }
-
-        // Return whether fields are set for s
-        public boolean isFieldsSet(Schema schema) {
-            return isComplete(schema.getFullName());
-        }
-
-        public boolean isComplete(String fullName) {
-            return cachedRecords.containsKey(fullName) && (!emptyCachedRecords.contains(fullName));
-        }
-
-        public String getSchemaWithoutFields() {
-            for (String string : emptyCachedRecords) {
-                return string;
-            }
-            return null;
-        }
+    public ReflectData getReflectData() {
+        return reflectData;
     }
 
 }

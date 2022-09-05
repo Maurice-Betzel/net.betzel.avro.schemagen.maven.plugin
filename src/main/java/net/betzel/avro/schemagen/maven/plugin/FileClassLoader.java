@@ -104,6 +104,7 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
         StringBuilder stringBuilder = new StringBuilder(n);
         ByteBuffer byteBuffer = ByteBuffer.allocate(n);
         CharBuffer charBuffer = CharBuffer.allocate(n);
+        //Charset.forName("UTF-8").newDecoder().onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
         CharsetDecoder charsetDecoder = ThreadLocalCoders.decoderFor("UTF-8").onMalformedInput(CodingErrorAction.REPORT).onUnmappableCharacter(CodingErrorAction.REPORT);
         char c = string.charAt(0);
         for (int i = 0; i < n; ) {

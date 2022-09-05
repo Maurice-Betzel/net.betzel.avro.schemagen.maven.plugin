@@ -28,6 +28,10 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
     @Parameter(property = "classFile", required = true, readonly = false)
     String classFile;
 
+    // Permits null field values. The schema generated for each field is a union of its declared type and null
+    @Parameter(property = "allowNullFields", required = false, defaultValue = "false", readonly = false)
+    boolean allowNullFields;
+
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
 
@@ -56,7 +60,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
-            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator();
+            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields);
             if (clazz.isInterface()) {
                 getLog().info("Generating AVRO protocol for class " + clazz.getCanonicalName());
                 Protocol protocol = schemaGenerator.generateProtocol(clazz);
