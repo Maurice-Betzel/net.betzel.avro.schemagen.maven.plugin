@@ -1,6 +1,7 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
 import org.apache.avro.AvroRuntimeException;
+import org.apache.avro.Conversions;
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
@@ -41,6 +42,9 @@ public final class AvroSchemaGenerator {
         } else {
             this.reflectData = new ReflectData();
         }
+        this.reflectData.setCustomCoders(true);
+        this.reflectData.addLogicalTypeConversion(new Conversions.UUIDConversion());
+        //this.reflectData.addLogicalTypeConversion(new Conversions.DecimalConversion());
     }
 
     public static String unionTypesToString(Schema schema) {

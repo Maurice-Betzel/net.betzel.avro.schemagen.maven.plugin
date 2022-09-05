@@ -16,6 +16,8 @@ import java.util.Objects;
 
 public class AvroEncoderDecoder<T> {
 
+    // Encoder and Decoder are not thread-safe, DatumReader and DatumWriter are thread-save
+
     private final Schema schema;
     private final ReflectData reflectData;
 
