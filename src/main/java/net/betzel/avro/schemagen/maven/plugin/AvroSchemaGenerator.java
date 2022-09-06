@@ -5,6 +5,7 @@ import org.apache.avro.Conversions;
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
+import org.apache.avro.data.TimeConversions;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
 
@@ -42,8 +43,17 @@ public final class AvroSchemaGenerator {
         } else {
             this.reflectData = new ReflectData();
         }
-        this.reflectData.setCustomCoders(true);
+        // speed increase
+        //this.reflectData.setCustomCoders(true);
         this.reflectData.addLogicalTypeConversion(new Conversions.UUIDConversion());
+        this.reflectData.addLogicalTypeConversion(new TimeConversions.DateConversion());
+        this.reflectData.addLogicalTypeConversion(new TimeConversions.TimeMillisConversion());
+        this.reflectData.addLogicalTypeConversion(new TimeConversions.TimestampMillisConversion());
+        this.reflectData.addLogicalTypeConversion(new TimeConversions.LocalTimestampMillisConversion());
+        this.reflectData.addLogicalTypeConversion(new AvroConversions.UtilDateTimestampMillis());
+        this.reflectData.addLogicalTypeConversion(new AvroConversions.ZonedDateTimestampMillis());
+
+
         //this.reflectData.addLogicalTypeConversion(new Conversions.DecimalConversion());
     }
 

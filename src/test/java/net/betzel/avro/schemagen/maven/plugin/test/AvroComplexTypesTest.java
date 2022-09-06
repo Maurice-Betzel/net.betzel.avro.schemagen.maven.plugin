@@ -18,41 +18,41 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
 
     @Test
     public void testComplexTypesAllowNullFields1() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true);
-        Schema avroComplexTypesRecordSchema = schemaGenerator.generateSchema(AvroComplexTypesRecord.class);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
+        Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
         AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
-        byte[] avroComplexTypesRecordBytes = encode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
+        byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroComplexTypesRecordBytes.length);
-        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
+        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
         Diff diff = javers.compare(avroComplexTypesRecord, avroComplexTypesRecordRestored);
         Assert.assertFalse(diff.hasChanges());
     }
 
     @Test
     public void testComplexTypesAllowNullFields2() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true);
-        Schema avroComplexTypesRecordSchema = schemaGenerator.generateSchema(AvroComplexTypesRecord.class);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
+        Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
         AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
         avroComplexTypesRecord.day = null;
         avroComplexTypesRecord.integerSet = null;
-        byte[] avroComplexTypesRecordBytes = encode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
+        byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroComplexTypesRecordBytes.length);
-        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
+        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
         Diff diff = javers.compare(avroComplexTypesRecord, avroComplexTypesRecordRestored);
         Assert.assertFalse(diff.hasChanges());
     }
 
     @Test
     public void testComplexTypesDisAllowNullFields1() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
-        Schema avroComplexTypesRecordSchema = schemaGenerator.generateSchema(AvroComplexTypesRecord.class);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
+        Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
         AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
-        byte[] avroComplexTypesRecordBytes = encode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
+        byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroComplexTypesRecordBytes.length);
-        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
+        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
         Diff diff = javers.compare(avroComplexTypesRecord, avroComplexTypesRecordRestored);
         Assert.assertFalse(diff.hasChanges());
     }
@@ -60,12 +60,12 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
     @Test
     public void testComplexTypesDisAllowNullFields2() {
         NullPointerException nullPointerException = Assert.assertThrows(NullPointerException.class, () -> {
-            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
-            Schema avroComplexTypesRecordSchema = schemaGenerator.generateSchema(AvroComplexTypesRecord.class);
+            AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
+            Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
             LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
             AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
             avroComplexTypesRecord.integerSet = null;
-            encode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
+            encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         });
         Assert.assertTrue(nullPointerException.getCause().getMessage().contains("null in array in field integerSet"));
     }
@@ -73,12 +73,12 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
     @Test
     public void testComplexTypesDisAllowNullFields3() {
         AvroTypeException avroTypeException = Assert.assertThrows(AvroTypeException.class, () -> {
-            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
-            Schema avroComplexTypesRecordSchema = schemaGenerator.generateSchema(AvroComplexTypesRecord.class);
+            AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
+            Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
             LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
             AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
             avroComplexTypesRecord.day = null;
-            encode(schemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
+            encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         });
         Assert.assertTrue(avroTypeException.getCause().getMessage().contains("value null is not a Day"));
     }

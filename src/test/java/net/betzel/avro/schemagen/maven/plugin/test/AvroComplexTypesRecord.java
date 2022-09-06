@@ -1,7 +1,17 @@
 package net.betzel.avro.schemagen.maven.plugin.test;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -21,13 +31,18 @@ public class AvroComplexTypesRecord {
     // Date and Time
     // Date is initialized with the current System time on deserialization
 
-    //Date date;
+    Date date;
+    Instant instant;
+    LocalDate localDate;
+    LocalTime localTime;
+    LocalDateTime localDateTime;
+    ZonedDateTime zonedDateTime;
 
     // Numbers
 
-    BigDecimal bigDecimal;
-
     UUID uuid;
+    BigDecimal bigDecimal;
+    BigInteger bigInteger;
 
     // Enum
 
@@ -52,11 +67,17 @@ public class AvroComplexTypesRecord {
         exception = new Exception(Exception.class.getSimpleName());
         runtimeException = new RuntimeException(RuntimeException.class.getSimpleName());
 
-        //date = Date.from(LocalDate.now().atStartOfDay().minusDays(2).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant());
-
-        bigDecimal = new BigDecimal(random.nextFloat()).setScale(3, ROUND_HALF_UP);
+        date = Date.from(LocalDate.now().atStartOfDay().minusDays(2).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant());
+        instant = LocalDateTime.now().minusDays(2).minusHours(2).toInstant(ZoneOffset.UTC);
+        localDate = LocalDate.now().minusDays(2);
+        localTime = LocalTime.now().minusHours(2);
+        localDateTime = LocalDateTime.now().minusDays(2).minusHours(2);
+        zonedDateTime = ZonedDateTime.now().minusDays(2).minusHours(2).withZoneSameInstant(ZoneId.of(ZoneId.SHORT_IDS.get("ACT")));
 
         uuid = UUID.randomUUID();
+        bigDecimal = new BigDecimal(random.nextFloat()).setScale(3, ROUND_HALF_UP);
+        bigInteger = BigInteger.ZERO.setBit(63);
+
 
         day = Day.SUNDAY;
         planet = Planet.EARTH;
