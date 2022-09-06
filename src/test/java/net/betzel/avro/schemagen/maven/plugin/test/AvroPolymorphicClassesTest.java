@@ -18,62 +18,17 @@ public class AvroPolymorphicClassesTest extends AbstractAvroTest implements Seri
     @Test
     public void testPolymorphicTypesAllowNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
-        Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
-        LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
-//        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
-//        byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
-//        LOGGER.info("Size of serialized data in bytes: {}", avroComplexTypesRecordBytes.length);
-//        AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
-//        Diff diff = javers.compare(avroComplexTypesRecord, avroComplexTypesRecordRestored);
-//        Assert.assertFalse(diff.hasChanges());
+        avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class);
+        Schema avroPolymorphicRecordSchema = avroSchemaGenerator.generateSchema(AvroPolymorphicTypesRecord.class);
+        LOGGER.info("Polymorphic types schema: {}", avroPolymorphicRecordSchema.toString(true));
+        AvroPolymorphicTypesRecord avroPolymorphicTypesRecord = new AvroPolymorphicTypesRecord();
+        avroPolymorphicTypesRecord.exception = new IOException("IO Exception");
+        avroPolymorphicTypesRecord.runtimeException = new NullPointerException("Nullpointer Exception");
+        byte[] avroPolymorphicTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroPolymorphicRecordSchema, avroPolymorphicTypesRecord);
+        LOGGER.info("Size of serialized data in bytes: {}", avroPolymorphicTypesRecordBytes.length);
+        AvroPolymorphicTypesRecord avroPolymorphicTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroPolymorphicRecordSchema, avroPolymorphicTypesRecordBytes);
+        Diff diff = javers.compare(avroPolymorphicTypesRecord, avroPolymorphicTypesRecordRestored);
+        Assert.assertFalse(diff.hasChanges());
     }
-
-
-    @Test
-    public void testPolymorphicClasses() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
-//        Schema carCollectionSchema = schemaGenerator.generateSchema(Cars.class);
-//        LOGGER.info("Schema without subtypes: {}", carCollectionSchema.toString(true));
-
-        schemaGenerator.declarePolymorphicType(CarHotHatchback.class, CarConvertible.class);
-        Schema carCollectionSchema = schemaGenerator.generateSchema(Cars.class);
-        LOGGER.info("Schema with subtypes added: {}", carCollectionSchema.toString(true));
-
-//        Cars carCollection = new Cars();
-//        carCollection.name = "Car collection";
-//        carCollection.cars = new ArrayList();
-//
-//        CarConvertible carConvertible = new CarConvertible();
-//        carConvertible.color = "RED";
-//        carConvertible.passengerCapacity = 2;
-//        carCollection.cars.add(carConvertible);
-//
-//        CarHotHatchback carHotHatchback = new CarHotHatchback();
-//        carHotHatchback.color = "BLUE";
-//        carHotHatchback.horsepower = 200.5;
-//        carHotHatchback.carRims = new CarRims();
-//        carHotHatchback.carRims.setHasExtraWide(true);
-//        carHotHatchback.carRims.setInches(20.0f);
-//        carCollection.cars.add(carHotHatchback);
-//
-//        byte[] bytes = encode(schemaGenerator.getReflectData(), carCollectionSchema, carCollection);
-//        LOGGER.info("Size of serialized data in bytes: {}", bytes.length);
-//        Cars carCollectionSchemaRestored = decode(schemaGenerator.getReflectData(), carCollectionSchema, bytes);
-//
-//        Assert.assertTrue(carCollectionSchemaRestored.cars.get(0).color.equals("RED"));
-//        Assert.assertTrue(((CarConvertible) (carCollectionSchemaRestored.cars.get(0))).passengerCapacity == 2);
-//        Assert.assertTrue(carCollectionSchemaRestored.cars.get(1).color.equals("BLUE"));
-//        Assert.assertTrue(((CarHotHatchback) (carCollectionSchemaRestored.cars.get(1))).horsepower == 200.5);
-    }
-
-    @Test
-    public void testPolymorphicCarGarage() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true);
-        schemaGenerator.declarePolymorphicType(CarHotHatchback.class, CarConvertible.class);
-        Schema polymorphicCarGarage = schemaGenerator.generateSchema(CarGarage.class);
-        LOGGER.info("Schema with subtypes added: {}", polymorphicCarGarage.toString(true));
-
-    }
-
 
 }

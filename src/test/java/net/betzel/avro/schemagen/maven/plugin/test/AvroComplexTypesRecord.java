@@ -25,9 +25,6 @@ import static java.math.BigDecimal.ROUND_HALF_UP;
 
 public class AvroComplexTypesRecord {
 
-    public Exception exception;
-    public RuntimeException runtimeException;
-
     // Enum
     public Day day;
     public Planet planet;
@@ -40,7 +37,7 @@ public class AvroComplexTypesRecord {
     public HashSet<String> stringSet;
     public LinkedHashSet<Integer> integerSet;
     public Map<String, Double> stringDoubleMap;
-    public Map<String, Integer> stringIntegerMap;    
+    public Map<String, Integer> stringIntegerMap;
 
     // Date and Time
     Date date;
@@ -59,9 +56,6 @@ public class AvroComplexTypesRecord {
     }
 
     public AvroComplexTypesRecord(Random random, LocalDateTime ldt, ZonedDateTime zdt) {
-        exception = new Exception(Exception.class.getSimpleName());
-        runtimeException = new RuntimeException(RuntimeException.class.getSimpleName());
-
         date = Date.from(ldt.toLocalDate().atStartOfDay().minusDays(2).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant());
         instant = ldt.minusDays(2).minusHours(2).toInstant(ZoneOffset.UTC);
         localDate = ldt.toLocalDate().minusDays(2);
