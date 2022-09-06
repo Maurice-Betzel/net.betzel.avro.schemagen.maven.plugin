@@ -25,7 +25,7 @@ public class AvroPrimitiveTypesRecord {
     public byte[] bytes;
     public double[] doubles;
 
-    public short[][]shorts;
+    public short[][] shorts;
 
     public AvroPrimitiveTypesRecord() {
     }
@@ -50,7 +50,7 @@ public class AvroPrimitiveTypesRecord {
         this.ints = new int[]{random.nextInt(), random.nextInt(), random.nextInt()};
         this.bytes = new byte[]{(byte) random.nextInt(), (byte) random.nextInt(), (byte) random.nextInt(), (byte) random.nextInt()};
         this.doubles = new double[]{random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble(), random.nextDouble()};
-        this.shorts = new short[][]{{1,101},{2, 102},{3,103},{4,104},{5,105}};
+        this.shorts = new short[][]{{1, 101}, {2, 102}, {3, 103}, {4, 104}, {5, 105}};
     }
 
 }

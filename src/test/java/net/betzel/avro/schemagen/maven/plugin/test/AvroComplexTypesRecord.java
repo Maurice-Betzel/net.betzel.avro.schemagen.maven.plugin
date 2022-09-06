@@ -30,35 +30,31 @@ public class AvroComplexTypesRecord {
 
     // Date and Time
     // Date is initialized with the current System time on deserialization
-
-    Date date;
-    Instant instant;
-    LocalDate localDate;
-    LocalTime localTime;
-    LocalDateTime localDateTime;
-    ZonedDateTime zonedDateTime;
-
-    // Numbers
-
-    UUID uuid;
-    BigDecimal bigDecimal;
-    BigInteger bigInteger;
-
-    // Enum
-
     public Day day;
     public Planet planet;
+    public List<String> stringList;
+    public HashSet<String> stringSet;
+    public LinkedHashSet<Integer> integerSet;
+    public Map<String, Integer> stringIntegerMap;
+
+    // Numbers
+    public Map<String, Double> stringDoubleMap;
+    Date date;
+    Instant instant;
+
+    // Enum
+    LocalDate localDate;
+    LocalTime localTime;
 
     // Collections
     // List and Map are fully supported but Set is only partially supported with ReflectDataWriter.
     // You need to explicitly declare actual type of Set in class field declaration.
     // Map keys are assumed to be strings.
-
-    public List<String> stringList;
-    public HashSet<String> stringSet;
-    public LinkedHashSet<Integer> integerSet;
-    public Map<String, Integer> stringIntegerMap;
-    public Map<String, Double> stringDoubleMap;
+    LocalDateTime localDateTime;
+    ZonedDateTime zonedDateTime;
+    UUID uuid;
+    BigDecimal bigDecimal;
+    BigInteger bigInteger;
 
     public AvroComplexTypesRecord() {
     }
@@ -131,6 +127,8 @@ public class AvroComplexTypesRecord {
         URANUS(8.686e+25, 2.5559e7),
         NEPTUNE(1.024e+26, 2.4746e7);
 
+        // universal gravitational constant  (m3 kg-1 s-2)
+        public static final double G = 6.67300E-11;
         private final double mass;   // in kilograms
         private final double radius; // in meters
 
@@ -146,9 +144,6 @@ public class AvroComplexTypesRecord {
         private double radius() {
             return radius;
         }
-
-        // universal gravitational constant  (m3 kg-1 s-2)
-        public static final double G = 6.67300E-11;
 
         double surfaceGravity() {
             return G * mass / (radius * radius);

@@ -69,6 +69,28 @@ public final class AvroSchemaGenerator {
         return String.join(", ", typeNames);
     }
 
+    /**
+     * Create and return a union of the null schema and the provided schema.
+     */
+    public static Schema makeNullable(Schema schema) {
+        if (schema.getType() == Schema.Type.UNION) {
+            // check to see if the union already contains NULL
+            for (Schema subType : schema.getTypes()) {
+                if (subType.getType() == Schema.Type.NULL) {
+                    return schema;
+                }
+            }
+            // add null as the first type in a new union
+            List<Schema> withNull = new ArrayList<>();
+            withNull.add(Schema.create(Schema.Type.NULL));
+            withNull.addAll(schema.getTypes());
+            return Schema.createUnion(withNull);
+        } else {
+            // create a union with null
+            return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), schema));
+        }
+    }
+
     // register polymorphic types
     public void declarePolymorphicType(Type... types) {
         // Declare a polymorphic type
@@ -237,28 +259,6 @@ public final class AvroSchemaGenerator {
             polyTypes.addAll(subTypes);
         }
         return Schema.createUnion(orderUnionSchemas(finalSchemaTypes));
-    }
-
-    /**
-     * Create and return a union of the null schema and the provided schema.
-     */
-    public static Schema makeNullable(Schema schema) {
-        if (schema.getType() == Schema.Type.UNION) {
-            // check to see if the union already contains NULL
-            for (Schema subType : schema.getTypes()) {
-                if (subType.getType() == Schema.Type.NULL) {
-                    return schema;
-                }
-            }
-            // add null as the first type in a new union
-            List<Schema> withNull = new ArrayList<>();
-            withNull.add(Schema.create(Schema.Type.NULL));
-            withNull.addAll(schema.getTypes());
-            return Schema.createUnion(withNull);
-        } else {
-            // create a union with null
-            return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), schema));
-        }
     }
 
     private List<Schema> orderUnionSchemas(List<Schema> unionSchemas) {
