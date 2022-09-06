@@ -42,9 +42,6 @@ public class AvroConversions {
 
         private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_ZONED_DATE_TIME;
 
-//        private Instant;
-//        private ZoneId;
-
         @Override
         public Class<ZonedDateTime> getConvertedType() {
             return ZonedDateTime.class;

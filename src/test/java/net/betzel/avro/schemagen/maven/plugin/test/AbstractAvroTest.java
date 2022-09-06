@@ -9,11 +9,15 @@ import org.javers.core.JaversBuilder;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.util.Random;
 
 public abstract class AbstractAvroTest {
 
     final Random random = new Random(13L);
+    final LocalDateTime localDateTime = LocalDateTime.now();
+    final ZonedDateTime zonedDateTime = ZonedDateTime.now();
     final Javers javers = JaversBuilder.javers().build();
 
     static byte[] encode(ReflectData reflectData, Schema schema, Object object) throws IOException {

@@ -28,30 +28,29 @@ public class AvroComplexTypesRecord {
     public Exception exception;
     public RuntimeException runtimeException;
 
-    // Date and Time
-    // Date is initialized with the current System time on deserialization
+    // Enum
     public Day day;
     public Planet planet;
-    public List<String> stringList;
-    public HashSet<String> stringSet;
-    public LinkedHashSet<Integer> integerSet;
-    public Map<String, Integer> stringIntegerMap;
-
-    // Numbers
-    public Map<String, Double> stringDoubleMap;
-    Date date;
-    Instant instant;
-
-    // Enum
-    LocalDate localDate;
-    LocalTime localTime;
 
     // Collections
     // List and Map are fully supported but Set is only partially supported with ReflectDataWriter.
     // You need to explicitly declare actual type of Set in class field declaration.
     // Map keys are assumed to be strings.
+    public List<String> stringList;
+    public HashSet<String> stringSet;
+    public LinkedHashSet<Integer> integerSet;
+    public Map<String, Double> stringDoubleMap;
+    public Map<String, Integer> stringIntegerMap;    
+
+    // Date and Time
+    Date date;
+    Instant instant;
+    LocalDate localDate;
+    LocalTime localTime;
     LocalDateTime localDateTime;
     ZonedDateTime zonedDateTime;
+
+    // Numbers    
     UUID uuid;
     BigDecimal bigDecimal;
     BigInteger bigInteger;
@@ -59,21 +58,20 @@ public class AvroComplexTypesRecord {
     public AvroComplexTypesRecord() {
     }
 
-    public AvroComplexTypesRecord(Random random) {
+    public AvroComplexTypesRecord(Random random, LocalDateTime ldt, ZonedDateTime zdt) {
         exception = new Exception(Exception.class.getSimpleName());
         runtimeException = new RuntimeException(RuntimeException.class.getSimpleName());
 
-        date = Date.from(LocalDate.now().atStartOfDay().minusDays(2).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant());
-        instant = LocalDateTime.now().minusDays(2).minusHours(2).toInstant(ZoneOffset.UTC);
-        localDate = LocalDate.now().minusDays(2);
-        localTime = LocalTime.now().minusHours(2);
-        localDateTime = LocalDateTime.now().minusDays(2).minusHours(2);
-        zonedDateTime = ZonedDateTime.now().minusDays(2).minusHours(2).withZoneSameInstant(ZoneId.of(ZoneId.SHORT_IDS.get("ACT")));
+        date = Date.from(ldt.toLocalDate().atStartOfDay().minusDays(2).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant());
+        instant = ldt.minusDays(2).minusHours(2).toInstant(ZoneOffset.UTC);
+        localDate = ldt.toLocalDate().minusDays(2);
+        localTime = ldt.toLocalTime().minusHours(2);
+        localDateTime = ldt.minusDays(2).minusHours(2);
+        zonedDateTime = zdt.minusDays(2).minusHours(2).withZoneSameInstant(ZoneId.of(ZoneId.SHORT_IDS.get("ACT")));
 
         uuid = UUID.randomUUID();
         bigDecimal = new BigDecimal(random.nextFloat()).setScale(3, ROUND_HALF_UP);
         bigInteger = BigInteger.ZERO.setBit(63);
-
 
         day = Day.SUNDAY;
         planet = Planet.EARTH;
@@ -96,8 +94,6 @@ public class AvroComplexTypesRecord {
         stringList.add("A");
         stringList.add("A");
         stringList.add("A");
-
-        // Map keys are assumed to be strings
 
         stringIntegerMap = new HashMap(5);
         stringIntegerMap.put("A", random.nextInt());

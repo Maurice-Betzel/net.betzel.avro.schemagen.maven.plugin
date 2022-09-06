@@ -21,7 +21,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
         Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
-        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
+        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
         byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroComplexTypesRecordBytes.length);
         AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
@@ -34,7 +34,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
         Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
-        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
+        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
         avroComplexTypesRecord.day = null;
         avroComplexTypesRecord.integerSet = null;
         byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
@@ -49,7 +49,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
         Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
-        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
+        AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
         byte[] avroComplexTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroComplexTypesRecordBytes.length);
         AvroComplexTypesRecord avroComplexTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecordBytes);
@@ -63,7 +63,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
             AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
             Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
             LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
-            AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
+            AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
             avroComplexTypesRecord.integerSet = null;
             encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         });
@@ -76,7 +76,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
             AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
             Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
             LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
-            AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random);
+            AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
             avroComplexTypesRecord.day = null;
             encode(avroSchemaGenerator.getReflectData(), avroComplexTypesRecordSchema, avroComplexTypesRecord);
         });
