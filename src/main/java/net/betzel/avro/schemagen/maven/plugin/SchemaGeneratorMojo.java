@@ -2,12 +2,14 @@ package net.betzel.avro.schemagen.maven.plugin;
 
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
+import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,11 +24,19 @@ import java.util.Objects;
 @Mojo(name = "schema-generator", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
 public final class SchemaGeneratorMojo extends AbstractMojo {
 
+    public static final String AVRO_INFO = "AVRO-INF";
+
+    @Parameter(defaultValue = "${project}", readonly = true)
+    protected MavenProject mavenProject;
+
     @Parameter(property = "classPath", defaultValue = "${project.build.outputDirectory}", required = true)
     String classPath;
 
     @Parameter(property = "classFile", required = true, readonly = false)
     String classFile;
+
+    @Parameter(property = "packageSchema", defaultValue = "true", required = false, readonly = false)
+    boolean packageSchema;
 
     // Permits null field values. The schema generated for each field is a union of its declared type and null
     @Parameter(property = "allowNullFields", required = false, defaultValue = "false", readonly = false)
@@ -43,7 +53,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
 
-    @Parameter(property = "targetSchemaPath", defaultValue = "${project.build.outputDirectory}/META-INF/avro/schemas", required = false, readonly = false)
+    @Parameter(property = "targetSchemaPath", defaultValue = "${project.build.directory}/" + AVRO_INFO, required = false, readonly = false)
     String targetSchemaPath;
 
     @Override
@@ -93,6 +103,13 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
                 Path schemaPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName() + ".avsc");
                 getLog().info("Writing AVRO schema to " + schemaPath);
                 Files.write(schemaPath, schema.toString(true).getBytes(StandardCharsets.UTF_8));
+                if(packageSchema) {
+                    List<Resource> resources = mavenProject.getResources();
+                    Resource resource = new Resource();
+                    resource.setTargetPath(AVRO_INFO);
+                    resource.setDirectory(targetSchemaPathDir.getPath());
+                    resources.add(resource);
+                }
             }
         } catch (IOException | ClassNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e.getCause());
