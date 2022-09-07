@@ -1,11 +1,10 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
 import org.apache.avro.AvroRuntimeException;
-import org.apache.avro.Conversions;
+import org.apache.avro.Conversion;
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
-import org.apache.avro.data.TimeConversions;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
 
@@ -43,13 +42,6 @@ public final class AvroSchemaGenerator {
         }
         this.reflectData.setCustomCoders(useCustomCoders);
         this.reflectData.setDefaultsGenerated(defaultsGenerated);
-        this.reflectData.addLogicalTypeConversion(new Conversions.UUIDConversion());
-        this.reflectData.addLogicalTypeConversion(new TimeConversions.DateConversion());
-        this.reflectData.addLogicalTypeConversion(new TimeConversions.TimeMillisConversion());
-        this.reflectData.addLogicalTypeConversion(new AvroConversions.UtilDateTimestampMillis());
-        this.reflectData.addLogicalTypeConversion(new AvroConversions.ZonedDateTimestampMillis());
-        this.reflectData.addLogicalTypeConversion(new TimeConversions.TimestampMillisConversion());
-        this.reflectData.addLogicalTypeConversion(new TimeConversions.LocalTimestampMillisConversion());
     }
 
     public static String unionTypesToString(Schema schema) {
@@ -381,8 +373,18 @@ public final class AvroSchemaGenerator {
         }
     }
 
+    public void setConversions(List<Conversion<?>> conversions) {
+        for (Conversion<?> conversion : conversions) {
+            this.reflectData.addLogicalTypeConversion(conversion);
+        }
+    }
+
+    public void addConversion(Conversion<?> conversion) {
+        this.reflectData.addLogicalTypeConversion(conversion);
+    }
+
     public ReflectData getReflectData() {
-        return reflectData;
+        return this.reflectData;
     }
 
 }

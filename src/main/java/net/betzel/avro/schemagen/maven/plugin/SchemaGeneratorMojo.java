@@ -1,5 +1,6 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
+import org.apache.avro.Conversion;
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
 import org.apache.maven.model.Resource;
@@ -18,8 +19,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 @Mojo(name = "schema-generator", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
 public final class SchemaGeneratorMojo extends AbstractMojo {
@@ -50,6 +53,9 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
     @Parameter(property = "defaultsGenerated", required = false, defaultValue = "false", readonly = false)
     boolean defaultsGenerated;
 
+    @Parameter(property = "conversionClassNames", required = false, readonly = false)
+    List<String> conversionClassNames;
+
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
 
@@ -77,6 +83,18 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
+            Set<Conversion<?>> conversionClasses = new HashSet();
+            for(String conversionClassName : conversionClassNames) {
+                Class<?> conversionClazz = fileClassLoader.loadClass(conversionClassName);
+                getLog().info("Adding AVRO conversion class " + conversionClazz.getCanonicalName());
+                Object conversionObject = conversionClazz.newInstance();
+                if(conversionObject instanceof Conversion) {
+                    conversionClasses.add((Conversion<?>) conversionObject);
+                } else {
+                    getLog().warn("Skipping non AVRO conversion class " + conversionClazz.getCanonicalName());
+
+                }
+            }
             Class clazz = fileClassLoader.loadClass(classFile);
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields, useCustomCoders, defaultsGenerated);
             if (clazz.isInterface()) {
@@ -111,7 +129,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
                     resources.add(resource);
                 }
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new MojoExecutionException(e.getMessage(), e.getCause());
         }
     }

@@ -18,6 +18,7 @@ public class AvroPolymorphicClassesTest extends AbstractAvroTest implements Seri
     @Test
     public void testPolymorphicTypesAllowNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
+        avroSchemaGenerator.setConversions(conversions);
         avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class);
         Schema avroPolymorphicRecordSchema = avroSchemaGenerator.generateSchema(AvroPolymorphicTypesRecord.class);
         LOGGER.info("Polymorphic types schema: {}", avroPolymorphicRecordSchema.toString(true));
