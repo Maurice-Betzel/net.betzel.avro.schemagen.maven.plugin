@@ -17,7 +17,7 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
 
     @Test
     public void testPrimitivesAllowNullFields() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true);
+        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true, false, false);
         Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
         LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
@@ -30,7 +30,7 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
 
     @Test
     public void testPrimitivesDisallowNullFields() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
+        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false, false, false);
         Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
         LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
@@ -45,7 +45,7 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
     @Test
     public void testPrimitivesDisallowNullFieldsException1() {
         NullPointerException nullPointerException = Assert.assertThrows(NullPointerException.class, () -> {
-            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
+            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false, false, false);
             Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
             LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
             AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
@@ -57,7 +57,7 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
     @Test
     public void testPrimitivesDisallowNullFieldsException2() {
         NullPointerException nullPointerException = Assert.assertThrows(NullPointerException.class, () -> {
-            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false);
+            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false, false, false);
             Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
             LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
             AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);

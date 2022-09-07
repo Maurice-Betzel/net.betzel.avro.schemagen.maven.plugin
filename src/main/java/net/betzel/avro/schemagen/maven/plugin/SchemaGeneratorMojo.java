@@ -32,6 +32,14 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
     @Parameter(property = "allowNullFields", required = false, defaultValue = "false", readonly = false)
     boolean allowNullFields;
 
+    // Beta function that speeds up decoding of objects by more than 10% and encoding by more than 30%
+    @Parameter(property = "useCustomCoders", required = false, defaultValue = "false", readonly = false)
+    boolean useCustomCoders;
+
+    // Set default values for types
+    @Parameter(property = "defaultsGenerated", required = false, defaultValue = "false", readonly = false)
+    boolean defaultsGenerated;
+
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
 
@@ -60,7 +68,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
-            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields);
+            AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields, useCustomCoders, defaultsGenerated);
             if (clazz.isInterface()) {
                 getLog().info("Generating AVRO protocol for class " + clazz.getCanonicalName());
                 Protocol protocol = schemaGenerator.generateProtocol(clazz);

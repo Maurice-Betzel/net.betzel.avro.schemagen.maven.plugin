@@ -18,7 +18,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
 
     @Test
     public void testComplexTypesAllowNullFields1() throws IOException {
-        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
         AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
@@ -31,7 +31,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
 
     @Test
     public void testComplexTypesAllowNullFields2() throws IOException {
-        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
         AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
@@ -46,7 +46,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
 
     @Test
     public void testComplexTypesDisAllowNullFields1() throws IOException {
-        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
         Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
         LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
         AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
@@ -60,7 +60,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
     @Test
     public void testComplexTypesDisAllowNullFields2() {
         NullPointerException nullPointerException = Assert.assertThrows(NullPointerException.class, () -> {
-            AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
+            AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
             Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
             LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
             AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);
@@ -73,7 +73,7 @@ public class AvroComplexTypesTest extends AbstractAvroTest implements Serializab
     @Test
     public void testComplexTypesDisAllowNullFields3() {
         AvroTypeException avroTypeException = Assert.assertThrows(AvroTypeException.class, () -> {
-            AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false);
+            AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
             Schema avroComplexTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroComplexTypesRecord.class);
             LOGGER.info("Complex types schema: {}", avroComplexTypesRecordSchema.toString(true));
             AvroComplexTypesRecord avroComplexTypesRecord = new AvroComplexTypesRecord(random, localDateTime, zonedDateTime);

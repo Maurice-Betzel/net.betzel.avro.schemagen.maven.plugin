@@ -30,31 +30,26 @@ public final class AvroSchemaGenerator {
 
     private static final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
 
-    private final boolean allowNullFields;
     private final ReflectData reflectData;
     private final RecordCache recordCache = new RecordCache();
     private final Map<String, Schema> customSchemas = new HashMap();
     private final Map<String, Set<Schema>> polymorphicTypeSchemas = new HashMap();
 
-    public AvroSchemaGenerator(boolean allowNullFields) {
-        this.allowNullFields = allowNullFields;
+    public AvroSchemaGenerator(boolean allowNullFields, boolean useCustomCoders, boolean defaultsGenerated) {
         if (allowNullFields) {
             this.reflectData = new ReflectData.AllowNull();
         } else {
             this.reflectData = new ReflectData();
         }
-        // speed increase
-        //this.reflectData.setCustomCoders(true);
+        this.reflectData.setCustomCoders(useCustomCoders);
+        this.reflectData.setDefaultsGenerated(defaultsGenerated);
         this.reflectData.addLogicalTypeConversion(new Conversions.UUIDConversion());
         this.reflectData.addLogicalTypeConversion(new TimeConversions.DateConversion());
         this.reflectData.addLogicalTypeConversion(new TimeConversions.TimeMillisConversion());
-        this.reflectData.addLogicalTypeConversion(new TimeConversions.TimestampMillisConversion());
-        this.reflectData.addLogicalTypeConversion(new TimeConversions.LocalTimestampMillisConversion());
         this.reflectData.addLogicalTypeConversion(new AvroConversions.UtilDateTimestampMillis());
         this.reflectData.addLogicalTypeConversion(new AvroConversions.ZonedDateTimestampMillis());
-
-
-        //this.reflectData.addLogicalTypeConversion(new Conversions.DecimalConversion());
+        this.reflectData.addLogicalTypeConversion(new TimeConversions.TimestampMillisConversion());
+        this.reflectData.addLogicalTypeConversion(new TimeConversions.LocalTimestampMillisConversion());
     }
 
     public static String unionTypesToString(Schema schema) {
