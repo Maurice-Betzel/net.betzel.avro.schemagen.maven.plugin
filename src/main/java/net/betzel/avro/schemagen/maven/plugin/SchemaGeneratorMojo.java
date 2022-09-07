@@ -53,8 +53,8 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
     @Parameter(property = "defaultsGenerated", required = false, defaultValue = "false", readonly = false)
     boolean defaultsGenerated;
 
-    @Parameter(property = "conversionClassNames", required = false, readonly = false)
-    List<String> conversionClassNames;
+    @Parameter(property = "conversionClassFiles", required = false, readonly = false)
+    List<String> conversionClassFiles;
 
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
@@ -84,7 +84,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Set<Conversion<?>> conversionClasses = new HashSet();
-            for(String conversionClassName : conversionClassNames) {
+            for(String conversionClassName : conversionClassFiles) {
                 Class<?> conversionClazz = fileClassLoader.loadClass(conversionClassName);
                 getLog().info("Adding AVRO conversion class " + conversionClazz.getCanonicalName());
                 Object conversionObject = conversionClazz.newInstance();
