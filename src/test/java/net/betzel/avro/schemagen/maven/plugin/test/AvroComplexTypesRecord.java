@@ -38,6 +38,7 @@ public class AvroComplexTypesRecord {
     public LinkedHashSet<Integer> integerSet;
     public Map<String, Double> stringDoubleMap;
     public Map<String, Integer> stringIntegerMap;
+    public Map<String, List<String>> stringListStringMap;
 
     // Date and Time
     Date date;
@@ -101,6 +102,9 @@ public class AvroComplexTypesRecord {
         stringDoubleMap.put("A", random.nextDouble());
         stringDoubleMap.put("A", random.nextDouble());
         stringDoubleMap.put("A", random.nextDouble());
+
+        stringListStringMap = new LinkedHashMap(1);
+        stringListStringMap.put("test", stringList);
     }
 
     public enum Day {
