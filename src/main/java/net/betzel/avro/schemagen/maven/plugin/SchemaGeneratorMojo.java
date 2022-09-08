@@ -91,7 +91,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
                 Object conversionObject = conversionClazz.newInstance();
                 if (conversionObject instanceof Conversion) {
                     conversionClasses.add((Conversion<?>) conversionObject);
-                    getLog().info("Added AVRO conversion class " + conversionClazz.getCanonicalName());
+                    getLog().debug("Added AVRO conversion class " + conversionClazz.getCanonicalName());
                 } else {
                     getLog().warn("Skipping non AVRO conversion class " + conversionClazz.getCanonicalName());
                 }
