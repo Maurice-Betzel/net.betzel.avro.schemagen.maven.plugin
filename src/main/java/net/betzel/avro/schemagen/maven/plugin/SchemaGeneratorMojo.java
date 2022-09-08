@@ -19,6 +19,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -83,7 +84,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         }
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
-        Set<Conversion<?>> conversionClasses = new HashSet();
+        List<Conversion<?>> conversionClasses = new ArrayList();
         try {
             for (String conversionClassName : conversionClassFiles) {
                 getLog().info("Adding AVRO conversion class " + conversionClassName);
@@ -103,6 +104,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields, useCustomCoders, defaultsGenerated);
+            schemaGenerator.setConversions(conversionClasses);
             if (clazz.isInterface()) {
                 getLog().info("Generating AVRO protocol for class " + clazz.getCanonicalName());
                 Protocol protocol = schemaGenerator.generateProtocol(clazz);
