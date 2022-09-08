@@ -77,24 +77,30 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
             try {
                 Files.createDirectories(targetSchemaPathDir.toPath());
             } catch (IOException e) {
+                getLog().error(e);
                 throw new SchemaGenerationException("Cannot create directory " + targetSchemaPathDir + "!");
             }
         }
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
-        try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
-            Set<Conversion<?>> conversionClasses = new HashSet();
-            for(String conversionClassName : conversionClassFiles) {
-                Class<?> conversionClazz = fileClassLoader.loadClass(conversionClassName);
-                getLog().info("Adding AVRO conversion class " + conversionClazz.getCanonicalName());
+        Set<Conversion<?>> conversionClasses = new HashSet();
+        try {
+            for (String conversionClassName : conversionClassFiles) {
+                getLog().info("Adding AVRO conversion class " + conversionClassName);
+                Class<?> conversionClazz = Class.forName(conversionClassName);
                 Object conversionObject = conversionClazz.newInstance();
-                if(conversionObject instanceof Conversion) {
+                if (conversionObject instanceof Conversion) {
                     conversionClasses.add((Conversion<?>) conversionObject);
+                    getLog().info("Added AVRO conversion class " + conversionClazz.getCanonicalName());
                 } else {
                     getLog().warn("Skipping non AVRO conversion class " + conversionClazz.getCanonicalName());
-
                 }
             }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            getLog().error(e);
+            throw new MojoExecutionException(e.getMessage(), e.getCause());
+        }
+        try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields, useCustomCoders, defaultsGenerated);
             if (clazz.isInterface()) {
@@ -121,7 +127,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
                 Path schemaPath = Paths.get(targetSchemaPathDir.getPath(), clazz.getName() + ".avsc");
                 getLog().info("Writing AVRO schema to " + schemaPath);
                 Files.write(schemaPath, schema.toString(true).getBytes(StandardCharsets.UTF_8));
-                if(packageSchema) {
+                if (packageSchema) {
                     List<Resource> resources = mavenProject.getResources();
                     Resource resource = new Resource();
                     resource.setTargetPath(AVRO_INFO);
@@ -129,7 +135,8 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
                     resources.add(resource);
                 }
             }
-        } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (IOException | ClassNotFoundException e) {
+            getLog().error(e);
             throw new MojoExecutionException(e.getMessage(), e.getCause());
         }
     }
