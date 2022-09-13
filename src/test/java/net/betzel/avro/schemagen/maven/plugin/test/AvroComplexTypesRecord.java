@@ -50,6 +50,7 @@ public class AvroComplexTypesRecord {
 
     // Numbers    
     UUID uuid;
+    Integer integer;
     BigDecimal bigDecimal;
     BigInteger bigInteger;
 
@@ -65,6 +66,7 @@ public class AvroComplexTypesRecord {
         zonedDateTime = zdt.minusDays(2).minusHours(2).withZoneSameInstant(ZoneId.of(ZoneId.SHORT_IDS.get("ACT")));
 
         uuid = UUID.randomUUID();
+        integer = random.nextInt();
         bigDecimal = new BigDecimal(random.nextFloat()).setScale(3, ROUND_HALF_UP);
         bigInteger = BigInteger.ZERO.setBit(63);
 

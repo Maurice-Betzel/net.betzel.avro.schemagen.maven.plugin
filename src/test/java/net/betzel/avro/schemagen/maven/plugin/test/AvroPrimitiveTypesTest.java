@@ -20,13 +20,15 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
         AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true, false, false);
         schemaGenerator.setConversions(conversions);
         Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
-        LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
+        LOGGER.info("Primitive types schema with null: {}", avroPrimitiveTypesRecordSchema.toString(true));
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
         byte[] avroPrimitiveTypesRecordBytes = encode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroPrimitiveTypesRecordBytes.length);
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecordRestored = decode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecordBytes);
         Diff diff = javers.compare(avroPrimitiveTypesRecord, avroPrimitiveTypesRecordRestored);
         Assert.assertFalse(diff.hasChanges());
+        Assert.assertNull(avroPrimitiveTypesRecordRestored.s1);
+        Assert.assertNull(avroPrimitiveTypesRecordRestored.nullBytes);
     }
 
     @Test
@@ -34,14 +36,17 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
         AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false, false, false);
         schemaGenerator.setConversions(conversions);
         Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
-        LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
+        LOGGER.info("Primitive types schema without null: {}", avroPrimitiveTypesRecordSchema.toString(true));
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
         avroPrimitiveTypesRecord.s1 = "Avoid null pointer on S1";
+        avroPrimitiveTypesRecord.nullBytes = new byte[]{};
         byte[] avroPrimitiveTypesRecordBytes = encode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroPrimitiveTypesRecordBytes.length);
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecordRestored = decode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecordBytes);
         Diff diff = javers.compare(avroPrimitiveTypesRecord, avroPrimitiveTypesRecordRestored);
         Assert.assertFalse(diff.hasChanges());
+        Assert.assertNotNull(avroPrimitiveTypesRecordRestored.s1);
+        Assert.assertNotNull(avroPrimitiveTypesRecordRestored.nullBytes);
     }
 
     @Test
@@ -50,11 +55,11 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false, false, false);
             schemaGenerator.setConversions(conversions);
             Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
-            LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
+            LOGGER.info("Primitive types schema without null: {}", avroPrimitiveTypesRecordSchema.toString(true));
             AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
             encode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecord);
         });
-        Assert.assertTrue(nullPointerException.getCause().getMessage().contains("null in string in field s1"));
+        Assert.assertTrue(nullPointerException.getCause().getMessage().contains("null in bytes in field nullBytes"));
     }
 
     @Test
@@ -63,13 +68,12 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(false, false, false);
             schemaGenerator.setConversions(conversions);
             Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
-            LOGGER.info("Primitive types schema: {}", avroPrimitiveTypesRecordSchema.toString(true));
+            LOGGER.info("Primitive types schema without null: {}", avroPrimitiveTypesRecordSchema.toString(true));
             AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
-            avroPrimitiveTypesRecord.s1 = "Avoid null pointer on S1";
-            avroPrimitiveTypesRecord.ints = null;
+            avroPrimitiveTypesRecord.nullBytes = new byte[]{(byte) random.nextInt(), (byte) random.nextInt(), (byte) random.nextInt(), (byte) random.nextInt()};
             encode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecord);
         });
-        Assert.assertTrue(nullPointerException.getCause().getMessage().contains("null in array in field ints"));
+        Assert.assertTrue(nullPointerException.getCause().getMessage().contains("null in string in field s1"));
     }
 
 }

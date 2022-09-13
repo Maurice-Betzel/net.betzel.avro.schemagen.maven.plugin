@@ -3,6 +3,7 @@ package net.betzel.avro.schemagen.maven.plugin;
 import org.apache.avro.Conversion;
 import org.apache.avro.Protocol;
 import org.apache.avro.Schema;
+import org.apache.avro.util.ClassUtils;
 import org.apache.maven.model.Resource;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -20,10 +21,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 @Mojo(name = "schema-generator", defaultPhase = LifecyclePhase.PROCESS_CLASSES)
 public final class SchemaGeneratorMojo extends AbstractMojo {
@@ -84,14 +83,14 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         }
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         getLog().debug("Context class loader hierarchy: " + ClassLoaderUtils.showClassLoaderHierarchy(contextClassLoader));
-        List<Conversion<?>> conversionClasses = new ArrayList();
+        List<Conversion<?>> conversions = new ArrayList();
         try {
             for (String conversionClassName : conversionClassFiles) {
                 getLog().info("Adding AVRO conversion class " + conversionClassName);
-                Class<?> conversionClazz = Class.forName(conversionClassName);
+                Class<?> conversionClazz = ClassUtils.forName(conversionClassName);
                 Object conversionObject = conversionClazz.newInstance();
                 if (conversionObject instanceof Conversion) {
-                    conversionClasses.add((Conversion<?>) conversionObject);
+                    conversions.add((Conversion<?>) conversionObject);
                     getLog().debug("Added AVRO conversion class " + conversionClazz.getCanonicalName());
                 } else {
                     getLog().warn("Skipping non AVRO conversion class " + conversionClazz.getCanonicalName());
@@ -104,7 +103,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
         try (FileClassLoader fileClassLoader = new FileClassLoader(classPathDir, contextClassLoader)) {
             Class clazz = fileClassLoader.loadClass(classFile);
             AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(allowNullFields, useCustomCoders, defaultsGenerated);
-            schemaGenerator.setConversions(conversionClasses);
+            schemaGenerator.setConversions(conversions);
             if (clazz.isInterface()) {
                 getLog().info("Generating AVRO protocol for class " + clazz.getCanonicalName());
                 Protocol protocol = schemaGenerator.generateProtocol(clazz);

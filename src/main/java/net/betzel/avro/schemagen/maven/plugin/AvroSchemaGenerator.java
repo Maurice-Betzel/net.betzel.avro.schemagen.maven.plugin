@@ -10,7 +10,6 @@ import org.apache.avro.specific.SpecificData;
 
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Deque;
 import java.util.HashMap;
@@ -25,6 +24,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE;
+
 public final class AvroSchemaGenerator {
 
     private static final Pattern uppercaseClassNamePattern = Pattern.compile("\\.[A-Z]");
@@ -34,12 +35,15 @@ public final class AvroSchemaGenerator {
     private final Map<String, Schema> customSchemas = new HashMap();
     private final Map<String, Set<Schema>> polymorphicTypeSchemas = new HashMap();
 
+    private boolean allowNullFields = false;
+
     public AvroSchemaGenerator(boolean allowNullFields, boolean useCustomCoders, boolean defaultsGenerated) {
         if (allowNullFields) {
-            this.reflectData = new ReflectData.AllowNull();
+            this.reflectData = new ReflectDataNullableFields(this);
         } else {
-            this.reflectData = new ReflectData();
+            this.reflectData = ReflectData.get();
         }
+        this.allowNullFields = allowNullFields;
         this.reflectData.setCustomCoders(useCustomCoders);
         this.reflectData.setDefaultsGenerated(defaultsGenerated);
     }
@@ -56,34 +60,13 @@ public final class AvroSchemaGenerator {
         return String.join(", ", typeNames);
     }
 
-    /**
-     * Create and return a union of the null schema and the provided schema.
-     */
-    public static Schema makeNullable(Schema schema) {
-        if (schema.getType() == Schema.Type.UNION) {
-            // check to see if the union already contains NULL
-            for (Schema subType : schema.getTypes()) {
-                if (subType.getType() == Schema.Type.NULL) {
-                    return schema;
-                }
-            }
-            // add null as the first type in a new union
-            List<Schema> withNull = new ArrayList<>();
-            withNull.add(Schema.create(Schema.Type.NULL));
-            withNull.addAll(schema.getTypes());
-            return Schema.createUnion(withNull);
-        } else {
-            // create a union with null
-            return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), schema));
-        }
-    }
-
     // register polymorphic types
     public void declarePolymorphicType(Type... types) {
         // Declare a polymorphic type
         recordCache.clear();
         for (Type type : types) {
             Class superType = ((Class) type).getSuperclass();
+            //if (Objects.nonNull(superType)) {
             while (!superType.equals(Object.class)) {
                 String typeName = superType.getCanonicalName();
                 Set<Schema> subtypes = polymorphicTypeSchemas.get(typeName);
@@ -95,6 +78,7 @@ public final class AvroSchemaGenerator {
                 subtypes.add(subtypeSchema);
                 superType = superType.getSuperclass();
             }
+            //}
         }
     }
 
@@ -173,6 +157,7 @@ public final class AvroSchemaGenerator {
         for (Field field : schema.getFields()) {
             Schema newFieldSchema;
             Schema oldFieldSchema = field.schema();
+
             switch (oldFieldSchema.getType()) {
                 case ARRAY:
                     newFieldSchema = getPolymorphicTypes(Schema.createArray(getPolymorphicTypes(oldFieldSchema.getElementType())));
@@ -180,32 +165,20 @@ public final class AvroSchemaGenerator {
                 case MAP:
                     newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));
                     break;
-                case RECORD:
+//                case UNION:
+//                    boolean prim = PrimitiveType.isPrimitive(oldFieldSchema);
+//                    newFieldSchema = oldFieldSchema;
+//                    break;
+
+                default:
                     newFieldSchema = getPolymorphicTypes(oldFieldSchema);
                     break;
-                case UNION:
-                    List<Schema> schemas = oldFieldSchema.getTypes();
-                    boolean typeNull = false;
-                    boolean typeRecord = false;
-                    Schema recordSchema = null;
-                    for (Schema subSchema : schemas) {
-                        if (subSchema.getType().equals(Schema.Type.NULL)) {
-                            typeNull = true;
-                        }
-                        if (subSchema.getType().equals(Schema.Type.RECORD)) {
-                            typeRecord = true;
-                            recordSchema = subSchema;
-                        }
-                    }
-                    if (typeNull && typeRecord) {
-                        newFieldSchema = getPolymorphicTypes(recordSchema);
-                        break;
-                    }
-                default:
-                    newFieldSchema = oldFieldSchema;
-                    break;
             }
-            newFields.add(new Field(field.name(), newFieldSchema, field.doc(), field.defaultVal(), field.order()));
+            if (newFieldSchema.getTypes().get(0).getType().equals(Schema.Type.NULL)) {
+                newFields.add(new Field(field.name(), newFieldSchema, field.doc(), NULL_DEFAULT_VALUE, field.order()));
+            } else {
+                newFields.add(new Field(field.name(), newFieldSchema, field.doc(), field.defaultVal(), field.order()));
+            }
         }
         return recordCache.set(schema, newFields);
     }
@@ -216,15 +189,18 @@ public final class AvroSchemaGenerator {
             case MAP:
             case ARRAY:
                 List<Schema> newTypes = new ArrayList();
-                newTypes.add(Schema.create(Schema.Type.NULL));
+                if (allowNullFields) {
+                    newTypes.add(Schema.create(Schema.Type.NULL));
+                }
                 newTypes.add(schema);
                 schema = Schema.createUnion(newTypes);
                 return schema;
         }
         if (schema.getType() != Schema.Type.UNION) {
             List<Schema> newTypes = new ArrayList();
-            newTypes.add(Schema.create(Schema.Type.NULL));
-
+            if (allowNullFields) {
+                newTypes.add(Schema.create(Schema.Type.NULL));
+            }
             newTypes.add(schema);
             schema = Schema.createUnion(newTypes);
         }
@@ -385,6 +361,10 @@ public final class AvroSchemaGenerator {
 
     public ReflectData getReflectData() {
         return this.reflectData;
+    }
+
+    public boolean hasPolymorphicTypeSchemas() {
+        return polymorphicTypeSchemas.size() > 0;
     }
 
 }
