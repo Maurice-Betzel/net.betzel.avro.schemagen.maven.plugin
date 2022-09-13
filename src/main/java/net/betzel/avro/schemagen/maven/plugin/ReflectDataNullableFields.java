@@ -32,12 +32,12 @@ public class ReflectDataNullableFields extends ReflectData {
             return schema;
         }
         if (avroSchemaGenerator.hasPolymorphicTypeSchemas()) {
-            // let schema generator deal with null types
+            // let the schema generator deal with these null types
             if (schema.getType().equals(Schema.Type.ARRAY)) {
                 return schema;
             }
             if (schema.getType().equals(Schema.Type.MAP)) {
-                System.err.println("MAP: " + schema.toString(true));
+                return schema;
             }
         }
         return makeNullable(schema);

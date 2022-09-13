@@ -11,7 +11,11 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serializable {
 
@@ -35,7 +39,7 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         throwables.add(new IllegalArgumentException("4"));
         throwables.add(new ArrayIndexOutOfBoundsException(5));
         avroPolymorphicTypesRecord.throwables = throwables;
-        List<Exception> exceptions = new ArrayList(5);
+        HashSet<Exception> exceptions = new HashSet(5);
         exceptions.add(new IOException("1"));
         exceptions.add(new NullPointerException("2"));
         exceptions.add(new InterruptedException("3"));
@@ -48,6 +52,13 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         serializables.add(new InterruptedException("3"));
         serializables.add(new IllegalArgumentException("4"));
         serializables.add(new ArrayIndexOutOfBoundsException(5));
+        Map<String, Exception> exceptionMap = new HashMap(5);
+        exceptionMap.put("A", new IOException("1"));
+        exceptionMap.put("B", new NullPointerException("2"));
+        exceptionMap.put("C", new InterruptedException("3"));
+        exceptionMap.put("D", new IllegalArgumentException("4"));
+        exceptionMap.put("E", new ArrayIndexOutOfBoundsException(5));
+        avroPolymorphicTypesRecord.exceptionMap = exceptionMap;
         //avroPolymorphicTypesRecord.serializables = serializables;
         byte[] avroPolymorphicTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroPolymorphicRecordSchema, avroPolymorphicTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroPolymorphicTypesRecordBytes.length);
@@ -74,7 +85,7 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         throwables.add(new IllegalArgumentException("4"));
         throwables.add(new ArrayIndexOutOfBoundsException(5));
         avroPolymorphicTypesRecord.throwables = throwables;
-        List<Exception> exceptions = new ArrayList(5);
+        HashSet<Exception> exceptions = new HashSet(5);
         exceptions.add(new IOException("1"));
         exceptions.add(new NullPointerException("2"));
         exceptions.add(new InterruptedException("3"));
@@ -87,6 +98,13 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         serializables.add(new InterruptedException("3"));
         serializables.add(new IllegalArgumentException("4"));
         serializables.add(new ArrayIndexOutOfBoundsException(5));
+        Map<String, Exception> exceptionMap = new HashMap(5);
+        exceptionMap.put("A", new IOException("1"));
+        exceptionMap.put("B", new NullPointerException("2"));
+        exceptionMap.put("C", new InterruptedException("3"));
+        exceptionMap.put("D", new IllegalArgumentException("4"));
+        exceptionMap.put("E", new ArrayIndexOutOfBoundsException(5));
+        avroPolymorphicTypesRecord.exceptionMap = exceptionMap;
         //avroPolymorphicTypesRecord.serializables = serializables;
         byte[] avroPolymorphicTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroPolymorphicRecordSchema, avroPolymorphicTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroPolymorphicTypesRecordBytes.length);

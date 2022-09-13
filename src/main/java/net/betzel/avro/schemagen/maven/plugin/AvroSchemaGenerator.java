@@ -165,11 +165,6 @@ public final class AvroSchemaGenerator {
                 case MAP:
                     newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));
                     break;
-//                case UNION:
-//                    boolean prim = PrimitiveType.isPrimitive(oldFieldSchema);
-//                    newFieldSchema = oldFieldSchema;
-//                    break;
-
                 default:
                     newFieldSchema = getPolymorphicTypes(oldFieldSchema);
                     break;
@@ -311,12 +306,10 @@ public final class AvroSchemaGenerator {
             if (message.isOneWay()) {
                 polymorphicMessages.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest())));
             } else {
-                //System.out.println(message.getName());
                 Schema requestSchema = message.getRequest();
                 Schema polymorphRequestSchema = polymorphizeSchema(requestSchema);
                 Schema responseSchema = message.getResponse();
                 Schema polymorphResponseSchema = polymorphizeSchema(responseSchema);
-
                 polymorphicMessages.put(message.getName(), polymorphicProtocol.createMessage(message, polymorphizeSchema(message.getRequest()), polymorphizeSchema(message.getResponse()), message.getErrors()));
             }
         }

@@ -1,6 +1,8 @@
 package net.betzel.avro.schemagen.maven.plugin.test;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 public class AvroPolymorphicTypesRecord {
 
@@ -8,7 +10,8 @@ public class AvroPolymorphicTypesRecord {
     public Exception exception;
     public RuntimeException runtimeException;
     public List<Throwable> throwables;
-    public List<Exception> exceptions;
+    public HashSet<Exception> exceptions;
+    public Map<String, Exception> exceptionMap;
     //public List<Serializable> serializables;
 
 }
