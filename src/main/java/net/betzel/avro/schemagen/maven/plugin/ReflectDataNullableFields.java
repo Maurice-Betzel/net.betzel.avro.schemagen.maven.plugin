@@ -23,26 +23,6 @@ public class ReflectDataNullableFields extends ReflectData {
         this.avroSchemaGenerator = avroSchemaGenerator;
     }
 
-    @Override
-    protected Schema createFieldSchema(Field field, Map<String, Schema> names) {
-        Schema schema = super.createFieldSchema(field, names);
-        System.out.println(schema.toString(true));
-        if (field.getType().isPrimitive()) {
-            // for primitive values a null will result in a NullPointerException at read time
-            return schema;
-        }
-        if (avroSchemaGenerator.hasPolymorphicTypeSchemas()) {
-            // let the schema generator deal with these null types
-            if (schema.getType().equals(Schema.Type.ARRAY)) {
-                return schema;
-            }
-            if (schema.getType().equals(Schema.Type.MAP)) {
-                return schema;
-            }
-        }
-        return makeNullable(schema);
-    }
-
     /**
      * Create and return a union of the null schema and the provided schema.
      */
@@ -63,6 +43,25 @@ public class ReflectDataNullableFields extends ReflectData {
             // create a union with null
             return Schema.createUnion(Arrays.asList(Schema.create(Schema.Type.NULL), schema));
         }
+    }
+
+    @Override
+    protected Schema createFieldSchema(Field field, Map<String, Schema> names) {
+        Schema schema = super.createFieldSchema(field, names);
+        if (field.getType().isPrimitive()) {
+            // for primitive values a null will result in a NullPointerException at read time
+            return schema;
+        }
+        if (avroSchemaGenerator.hasPolymorphicTypeSchemas()) {
+            // let the polymorph schema generator deal with these null types
+            if (schema.getType().equals(Schema.Type.ARRAY)) {
+                return schema;
+            }
+            if (schema.getType().equals(Schema.Type.MAP)) {
+                return schema;
+            }
+        }
+        return makeNullable(schema);
     }
 
 }

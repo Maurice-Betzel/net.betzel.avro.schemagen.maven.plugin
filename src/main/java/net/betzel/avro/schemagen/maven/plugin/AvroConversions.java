@@ -107,7 +107,7 @@ public class AvroConversions {
                 objectOutputStream.writeObject(serializable);
                 objectOutputStream.close();
             } catch (Exception e) {
-                byte[] bytes = {(byte)0};
+                byte[] bytes = {(byte) 0};
                 return ByteBuffer.wrap(bytes);
             }
             return ByteBuffer.wrap(byteArrayOutputStream.toByteArray());
@@ -126,7 +126,7 @@ public class AvroConversions {
 
         @Override
         public Schema getRecommendedSchema() {
-            return AvroLogicalTypes.serializableMarkerInterface().addToSchema(Schema.create(Schema.Type.STRING));
+            return AvroLogicalTypes.serializableMarkerInterface().addToSchema(Schema.create(Schema.Type.BYTES));
         }
     }
 

@@ -16,9 +16,11 @@ public class AvroLogicalTypes {
     public static AvroLogicalTypes.UtilDateTimestampMillis utilDateTimestampMillis() {
         return UTIL_DATE_TIMESTAMP_MILLIS_TYPE;
     }
+
     public static AvroLogicalTypes.ZonedDateTimestampMillis zonedDateTimestampMillis() {
         return ZONED_DATE_TIMESTAMP_MILLIS_TYPE;
     }
+
     public static AvroLogicalTypes.SerializableMarkerInterface serializableMarkerInterface() {
         return SERIALIZABLE_MARKER_INTERFACE_TYPE;
     }
@@ -62,8 +64,8 @@ public class AvroLogicalTypes {
         @Override
         public void validate(Schema schema) {
             super.validate(schema);
-            if (schema.getType() != Schema.Type.STRING) {
-                throw new IllegalArgumentException("Serializable marker interface java.io.Serializable can only be used with an underlying string type");
+            if (schema.getType() != Schema.Type.BYTES) {
+                throw new IllegalArgumentException("Serializable marker interface java.io.Serializable can only be used with an underlying bytes type");
             }
         }
     }

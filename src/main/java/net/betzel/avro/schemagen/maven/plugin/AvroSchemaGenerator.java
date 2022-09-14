@@ -7,7 +7,9 @@ import org.apache.avro.Schema;
 import org.apache.avro.Schema.Field;
 import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
+import org.apache.avro.util.ClassUtils;
 
+import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +38,7 @@ public final class AvroSchemaGenerator {
     private final Map<String, Set<Schema>> polymorphicTypeSchemas = new HashMap();
 
     private boolean allowNullFields = false;
+    private boolean allowSerializableFields = true;
 
     public AvroSchemaGenerator(boolean allowNullFields, boolean useCustomCoders, boolean defaultsGenerated) {
         if (allowNullFields) {
@@ -65,20 +68,27 @@ public final class AvroSchemaGenerator {
         // Declare a polymorphic type
         recordCache.clear();
         for (Type type : types) {
+            Schema subtypeSchema = reflectData.getSchema(type);
+            // prepare for Serializable fields
+            if (type instanceof Serializable) {
+                Set<Schema> serializableTypes = polymorphicTypeSchemas.get(Serializable.class.getCanonicalName());
+                if (Objects.isNull(serializableTypes)) {
+                    serializableTypes = new HashSet();
+                    polymorphicTypeSchemas.put(Serializable.class.getCanonicalName(), serializableTypes);
+                }
+                serializableTypes.add(subtypeSchema);
+            }
             Class superType = ((Class) type).getSuperclass();
-            //if (Objects.nonNull(superType)) {
             while (!superType.equals(Object.class)) {
                 String typeName = superType.getCanonicalName();
-                Set<Schema> subtypes = polymorphicTypeSchemas.get(typeName);
-                if (Objects.isNull(subtypes)) {
-                    subtypes = new HashSet();
-                    polymorphicTypeSchemas.put(typeName, subtypes);
+                Set<Schema> subTypes = polymorphicTypeSchemas.get(typeName);
+                if (Objects.isNull(subTypes)) {
+                    subTypes = new HashSet();
+                    polymorphicTypeSchemas.put(typeName, subTypes);
                 }
-                Schema subtypeSchema = reflectData.getSchema(type);
-                subtypes.add(subtypeSchema);
+                subTypes.add(subtypeSchema);
                 superType = superType.getSuperclass();
             }
-            //}
         }
     }
 
@@ -133,7 +143,7 @@ public final class AvroSchemaGenerator {
                 if (Objects.nonNull(stringBuilder)) {
                     emptySchemaName = stringBuilder.toString();
                 }
-                polymorphicType = Class.forName(emptySchemaName);
+                polymorphicType = ClassUtils.forName(emptySchemaName);
             } catch (ClassNotFoundException ex) {
                 throw new SchemaGenerationException("Unable to find class for " + emptySchemaName, ex);
             }

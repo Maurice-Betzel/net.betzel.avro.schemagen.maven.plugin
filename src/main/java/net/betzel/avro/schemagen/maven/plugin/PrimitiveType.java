@@ -1,10 +1,10 @@
 package net.betzel.avro.schemagen.maven.plugin;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.avro.Schema;
 import org.apache.avro.Schema.Type;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public enum PrimitiveType {
 
@@ -24,7 +24,7 @@ public enum PrimitiveType {
     }
 
     public static PrimitiveType[] valuesWithoutNull() {
-        return new PrimitiveType[] { BOOLEAN, INT, LONG, FLOAT, DOUBLE, BYTES, STRING };
+        return new PrimitiveType[]{BOOLEAN, INT, LONG, FLOAT, DOUBLE, BYTES, STRING};
     }
 
     public static List<PrimitiveType> getValuesAsList(boolean includeNull) {
@@ -35,10 +35,6 @@ public enum PrimitiveType {
             }
         }
         return values;
-    }
-
-    public String getName() {
-        return this.toString().toLowerCase();
     }
 
     public static PrimitiveType getType(Schema schema) {
@@ -77,6 +73,10 @@ public enum PrimitiveType {
             return getType(type);
         }
         return null;
+    }
+
+    public String getName() {
+        return this.toString().toLowerCase();
     }
 
 }
