@@ -35,7 +35,6 @@ public abstract class AbstractAvroTest {
         conversions.add(new AvroConversions.ZonedDateTimestampMillis());
         conversions.add(new TimeConversions.TimestampMillisConversion());
         conversions.add(new TimeConversions.LocalTimestampMillisConversion());
-        //conversions.add(new AvroConversions.SerializableMarkerInterface());
     }
 
     static byte[] encode(ReflectData reflectData, Schema schema, Object object) throws IOException {

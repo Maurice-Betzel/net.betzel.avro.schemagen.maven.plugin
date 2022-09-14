@@ -26,6 +26,8 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static net.betzel.avro.schemagen.maven.plugin.ReflectDataNullableFields.PRIMITIVE;
+import static org.apache.avro.LogicalType.LOGICAL_TYPE_PROP;
 import static org.apache.avro.Schema.Field.NULL_DEFAULT_VALUE;
 
 public final class AvroSchemaGenerator {
@@ -194,7 +196,9 @@ public final class AvroSchemaGenerator {
             case ARRAY:
                 List<Schema> newTypes = new ArrayList();
                 if (allowNullFields) {
-                    newTypes.add(Schema.create(Schema.Type.NULL));
+                    if (schema.getProp(LOGICAL_TYPE_PROP) != PRIMITIVE) {
+                        newTypes.add(Schema.create(Schema.Type.NULL));
+                    }
                 }
                 newTypes.add(schema);
                 schema = Schema.createUnion(newTypes);
@@ -203,7 +207,9 @@ public final class AvroSchemaGenerator {
         if (schema.getType() != Schema.Type.UNION) {
             List<Schema> newTypes = new ArrayList();
             if (allowNullFields) {
-                newTypes.add(Schema.create(Schema.Type.NULL));
+                if (schema.getProp(LOGICAL_TYPE_PROP) != PRIMITIVE) {
+                    newTypes.add(Schema.create(Schema.Type.NULL));
+                }
             }
             newTypes.add(schema);
             schema = Schema.createUnion(newTypes);
@@ -232,41 +238,30 @@ public final class AvroSchemaGenerator {
         // Arrange the schemas in order
         Map<String, Schema> namedSchemas = new TreeMap();
         List<Schema> orderedSchemasNew = new LinkedList();
-//        boolean booleanAdded = false, bytesAdded = false, doubleAdded = false,
-//                floatAdded = false, intAdded = false, longAdded = false,
-//                nullAdded = false, stringAdded = false;
         for (Schema unionSchema : unionSchemas) {
             switch (unionSchema.getType()) {
                 case BOOLEAN:
-//                    booleanAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case BYTES:
-//                    bytesAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case DOUBLE:
-//                    doubleAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case FLOAT:
-//                    floatAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case INT:
-//                    intAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case LONG:
-//                    longAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case NULL:
-//                    nullAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case STRING:
-//                    stringAdded = true;
                     orderedSchemasNew.add(unionSchema);
                     break;
                 case ENUM:
@@ -278,34 +273,6 @@ public final class AvroSchemaGenerator {
                     throw new SchemaGenerationException("Unsupported operation: Schema of type " + unionSchema.getType() + " in union");
             }
         }
-//        List<Schema> orderedSchemas = new LinkedList();
-//        for(Schema schema : orderedSchemasNew.values()) {
-//            orderedSchemas.add(schema);
-//        }
-//        if (booleanAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.BOOLEAN));
-//        }
-//        if (bytesAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.BYTES));
-//        }
-//        if (doubleAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.DOUBLE));
-//        }
-//        if (floatAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.FLOAT));
-//        }
-//        if (intAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.INT));
-//        }
-//        if (longAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.LONG));
-//        }
-//        if (nullAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.NULL));
-//        }
-//        if (stringAdded) {
-//            orderedSchemas.add(Schema.create(Schema.Type.STRING));
-//        }
         for (Schema schema : namedSchemas.values()) {
             orderedSchemasNew.add(schema);
         }

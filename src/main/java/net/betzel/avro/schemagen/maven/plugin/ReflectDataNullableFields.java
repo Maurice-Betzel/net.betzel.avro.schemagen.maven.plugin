@@ -9,6 +9,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import static org.apache.avro.LogicalType.LOGICAL_TYPE_PROP;
+
 /**
  * {@link ReflectData} implementation that permits null field values. The schema
  * generated for each field is a union of its declared type and null.
@@ -16,6 +18,8 @@ import java.util.Map;
  */
 
 public class ReflectDataNullableFields extends ReflectData {
+
+    public static final String PRIMITIVE = "primitive";
 
     private final AvroSchemaGenerator avroSchemaGenerator;
 
@@ -50,6 +54,10 @@ public class ReflectDataNullableFields extends ReflectData {
         Schema schema = super.createFieldSchema(field, names);
         if (field.getType().isPrimitive()) {
             // for primitive values a null will result in a NullPointerException at read time
+            if (avroSchemaGenerator.hasPolymorphicTypeSchemas()) {
+                // let the polymorph schema generator now primitive types
+                schema.addProp(LOGICAL_TYPE_PROP, PRIMITIVE);
+            }
             return schema;
         }
         if (avroSchemaGenerator.hasPolymorphicTypeSchemas()) {
