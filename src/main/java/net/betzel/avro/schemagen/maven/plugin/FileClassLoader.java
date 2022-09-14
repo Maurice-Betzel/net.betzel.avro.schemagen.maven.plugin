@@ -49,7 +49,8 @@ import static java.security.AccessController.doPrivileged;
 import static java.util.jar.JarFile.MANIFEST_NAME;
 
 /**
- * This implements {@link SecureClassLoader} and creates its class path over a given collection of jarFiles or directories. This implements also {@link Closeable}.
+ * This implements {@link SecureClassLoader} and creates its class path over a given collection of jarFiles or directories.
+ * This implements also {@link Closeable}.
  */
 public final class FileClassLoader extends SecureClassLoader implements Closeable {
 

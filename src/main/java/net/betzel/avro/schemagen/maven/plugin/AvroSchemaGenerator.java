@@ -230,36 +230,44 @@ public final class AvroSchemaGenerator {
 
     private List<Schema> orderUnionSchemas(List<Schema> unionSchemas) {
         // Arrange the schemas in order
-        List<Schema> orderedSchemas = new LinkedList();
         Map<String, Schema> namedSchemas = new TreeMap();
-        boolean booleanAdded = false, bytesAdded = false, doubleAdded = false,
-                floatAdded = false, intAdded = false, longAdded = false,
-                nullAdded = false, stringAdded = false;
+        List<Schema> orderedSchemasNew = new LinkedList();
+//        boolean booleanAdded = false, bytesAdded = false, doubleAdded = false,
+//                floatAdded = false, intAdded = false, longAdded = false,
+//                nullAdded = false, stringAdded = false;
         for (Schema unionSchema : unionSchemas) {
             switch (unionSchema.getType()) {
                 case BOOLEAN:
-                    booleanAdded = true;
+//                    booleanAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case BYTES:
-                    bytesAdded = true;
+//                    bytesAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case DOUBLE:
-                    doubleAdded = true;
+//                    doubleAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case FLOAT:
-                    floatAdded = true;
+//                    floatAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case INT:
-                    intAdded = true;
+//                    intAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case LONG:
-                    longAdded = true;
+//                    longAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case NULL:
-                    nullAdded = true;
+//                    nullAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case STRING:
-                    stringAdded = true;
+//                    stringAdded = true;
+                    orderedSchemasNew.add(unionSchema);
                     break;
                 case ENUM:
                 case FIXED:
@@ -270,34 +278,38 @@ public final class AvroSchemaGenerator {
                     throw new SchemaGenerationException("Unsupported operation: Schema of type " + unionSchema.getType() + " in union");
             }
         }
-        if (booleanAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.BOOLEAN));
-        }
-        if (bytesAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.BYTES));
-        }
-        if (doubleAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.DOUBLE));
-        }
-        if (floatAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.FLOAT));
-        }
-        if (intAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.INT));
-        }
-        if (longAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.LONG));
-        }
-        if (nullAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.NULL));
-        }
-        if (stringAdded) {
-            orderedSchemas.add(Schema.create(Schema.Type.STRING));
-        }
+//        List<Schema> orderedSchemas = new LinkedList();
+//        for(Schema schema : orderedSchemasNew.values()) {
+//            orderedSchemas.add(schema);
+//        }
+//        if (booleanAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.BOOLEAN));
+//        }
+//        if (bytesAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.BYTES));
+//        }
+//        if (doubleAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.DOUBLE));
+//        }
+//        if (floatAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.FLOAT));
+//        }
+//        if (intAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.INT));
+//        }
+//        if (longAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.LONG));
+//        }
+//        if (nullAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.NULL));
+//        }
+//        if (stringAdded) {
+//            orderedSchemas.add(Schema.create(Schema.Type.STRING));
+//        }
         for (Schema schema : namedSchemas.values()) {
-            orderedSchemas.add(schema);
+            orderedSchemasNew.add(schema);
         }
-        return orderedSchemas;
+        return orderedSchemasNew;
     }
 
     private Protocol polymorphizeProtocol(Protocol protocol) {

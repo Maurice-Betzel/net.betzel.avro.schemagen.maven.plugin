@@ -17,14 +17,14 @@ public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializ
 
     @Test
     public void testPrimitivesAllowNullFields() throws IOException {
-        AvroSchemaGenerator schemaGenerator = new AvroSchemaGenerator(true, false, false);
-        schemaGenerator.setConversions(conversions);
-        Schema avroPrimitiveTypesRecordSchema = schemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
+        AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
+        avroSchemaGenerator.setConversions(conversions);
+        Schema avroPrimitiveTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroPrimitiveTypesRecord.class);
         LOGGER.info("Primitive types schema with null: {}", avroPrimitiveTypesRecordSchema.toString(true));
         AvroPrimitiveTypesRecord avroPrimitiveTypesRecord = new AvroPrimitiveTypesRecord(random);
-        byte[] avroPrimitiveTypesRecordBytes = encode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecord);
+        byte[] avroPrimitiveTypesRecordBytes = encode(avroSchemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecord);
         LOGGER.info("Size of serialized data in bytes: {}", avroPrimitiveTypesRecordBytes.length);
-        AvroPrimitiveTypesRecord avroPrimitiveTypesRecordRestored = decode(schemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecordBytes);
+        AvroPrimitiveTypesRecord avroPrimitiveTypesRecordRestored = decode(avroSchemaGenerator.getReflectData(), avroPrimitiveTypesRecordSchema, avroPrimitiveTypesRecordBytes);
         Diff diff = javers.compare(avroPrimitiveTypesRecord, avroPrimitiveTypesRecordRestored);
         Assert.assertFalse(diff.hasChanges());
         Assert.assertNull(avroPrimitiveTypesRecordRestored.s1);
