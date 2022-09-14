@@ -28,39 +28,29 @@ import java.util.Objects;
 public final class SchemaGeneratorMojo extends AbstractMojo {
 
     public static final String AVRO_INFO = "AVRO-INF";
-
-    @Parameter(defaultValue = "${project}", readonly = true)
-    protected MavenProject mavenProject;
-
     @Parameter(property = "classPath", defaultValue = "${project.build.outputDirectory}", required = true)
     String classPath;
-
     @Parameter(property = "classFile", required = true, readonly = false)
     String classFile;
-
     @Parameter(property = "packageSchema", defaultValue = "true", required = false, readonly = false)
     boolean packageSchema;
-
     // Permits null field values. The schema generated for each field is a union of its declared type and null
     @Parameter(property = "allowNullFields", required = false, defaultValue = "false", readonly = false)
     boolean allowNullFields;
-
     // Beta function that speeds up decoding of objects by more than 10% and encoding by more than 30%
     @Parameter(property = "useCustomCoders", required = false, defaultValue = "false", readonly = false)
     boolean useCustomCoders;
-
     // Set default values for types
     @Parameter(property = "defaultsGenerated", required = false, defaultValue = "false", readonly = false)
     boolean defaultsGenerated;
-
     @Parameter(property = "conversionClassFiles", required = false, readonly = false)
     List<String> conversionClassFiles;
-
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
-
     @Parameter(property = "targetSchemaPath", defaultValue = "${project.build.directory}/" + AVRO_INFO, required = false, readonly = false)
     String targetSchemaPath;
+    @Parameter(defaultValue = "${project}", readonly = true)
+    private MavenProject mavenProject;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {

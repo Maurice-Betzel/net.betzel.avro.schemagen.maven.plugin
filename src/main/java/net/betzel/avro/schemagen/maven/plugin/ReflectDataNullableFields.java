@@ -17,7 +17,7 @@ import java.util.Map;
 
 public class ReflectDataNullableFields extends ReflectData {
 
-    private AvroSchemaGenerator avroSchemaGenerator;
+    private final AvroSchemaGenerator avroSchemaGenerator;
 
     public ReflectDataNullableFields(AvroSchemaGenerator avroSchemaGenerator) {
         this.avroSchemaGenerator = avroSchemaGenerator;

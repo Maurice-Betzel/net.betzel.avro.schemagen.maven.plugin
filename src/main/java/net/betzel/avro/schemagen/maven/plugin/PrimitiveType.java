@@ -17,9 +17,9 @@ public enum PrimitiveType {
     BYTES(Schema.Type.BYTES),
     STRING(Schema.Type.STRING);
 
-    private Schema.Type type;
+    private final Schema.Type type;
 
-    private PrimitiveType(Type type) {
+    PrimitiveType(Type type) {
         this.type = type;
     }
 

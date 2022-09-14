@@ -360,7 +360,7 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
         return new IteratorEnumeration(iterable.iterator());
     }
 
-    protected synchronized void ensureNotClosed() {
+    private synchronized void ensureNotClosed() {
         if (closed) {
             throw new IllegalStateException(this + " is already closed.");
         }
@@ -482,7 +482,7 @@ public final class FileClassLoader extends SecureClassLoader implements Closeabl
      * @return the newly defined Package object
      * @throws IllegalArgumentException if the package name duplicates an existing package either in this class loader or one of its ancestors
      */
-    protected Package definePackage(String name, Manifest man, URL url) throws IllegalArgumentException {
+    private Package definePackage(String name, Manifest man, URL url) throws IllegalArgumentException {
         String path = name.replace('.', '/').concat("/");
         String specTitle = null;
         String specVersion = null;

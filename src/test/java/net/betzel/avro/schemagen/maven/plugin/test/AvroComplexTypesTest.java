@@ -14,7 +14,7 @@ import java.io.Serializable;
 
 public class AvroComplexTypesTest extends AbstractAvroTest implements Serializable {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(AvroComplexTypesTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AvroComplexTypesTest.class);
 
     @Test
     public void testComplexTypesAllowNullFields1() throws IOException {

@@ -13,7 +13,7 @@ import java.io.Serializable;
 
 public class AvroPrimitiveTypesTest extends AbstractAvroTest implements Serializable {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(AvroPrimitiveTypesTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AvroPrimitiveTypesTest.class);
 
     @Test
     public void testPrimitivesAllowNullFields() throws IOException {

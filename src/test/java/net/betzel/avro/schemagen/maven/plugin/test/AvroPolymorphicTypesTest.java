@@ -1,7 +1,6 @@
 package net.betzel.avro.schemagen.maven.plugin.test;
 
 import net.betzel.avro.schemagen.maven.plugin.AvroSchemaGenerator;
-import org.apache.avro.AvroTypeException;
 import org.apache.avro.Schema;
 import org.apache.avro.UnresolvedUnionException;
 import org.javers.core.diff.Diff;
@@ -20,7 +19,7 @@ import java.util.Map;
 
 public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serializable {
 
-    private static Logger LOGGER = LoggerFactory.getLogger(AvroPolymorphicTypesTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AvroPolymorphicTypesTest.class);
 
     @Test
     public void testPolymorphicTypesAllowNullFields1() throws IOException {
@@ -72,7 +71,7 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
     public void testPolymorphicTypesAllowNonNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
         avroSchemaGenerator.setConversions(conversions);
-        avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType(String.class, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         Schema avroPolymorphicRecordSchema = avroSchemaGenerator.generateSchema(AvroPolymorphicTypesRecord.class);
         LOGGER.info("Polymorphic types schema without null: {}", avroPolymorphicRecordSchema.toString(true));
         AvroPolymorphicTypesRecord avroPolymorphicTypesRecord = new AvroPolymorphicTypesRecord();
@@ -100,7 +99,6 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         serializables.add(new InterruptedException("3"));
         serializables.add(new IllegalArgumentException("4"));
         serializables.add(new ArrayIndexOutOfBoundsException(5));
-        //serializables.add("a string");
         avroPolymorphicTypesRecord.serializables = serializables;
         Map<String, Exception> exceptionMap = new HashMap(5);
         exceptionMap.put("A", new IOException("1"));

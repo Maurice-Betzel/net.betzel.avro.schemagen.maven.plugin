@@ -2,6 +2,7 @@ package net.betzel.avro.schemagen.maven.plugin.test;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -20,8 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
-
-import static java.math.BigDecimal.ROUND_HALF_UP;
 
 public class AvroComplexTypesRecord {
 
@@ -67,7 +66,7 @@ public class AvroComplexTypesRecord {
 
         uuid = UUID.randomUUID();
         integer = random.nextInt();
-        bigDecimal = new BigDecimal(random.nextFloat()).setScale(3, ROUND_HALF_UP);
+        bigDecimal = BigDecimal.valueOf(random.nextFloat()).setScale(3, RoundingMode.HALF_UP);
         bigInteger = BigInteger.ZERO.setBit(63);
 
         day = Day.SUNDAY;

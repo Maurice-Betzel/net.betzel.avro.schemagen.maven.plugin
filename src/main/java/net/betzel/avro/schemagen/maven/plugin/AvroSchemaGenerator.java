@@ -36,9 +36,8 @@ public final class AvroSchemaGenerator {
     private final RecordCache recordCache = new RecordCache();
     private final Map<String, Schema> customSchemas = new HashMap();
     private final Map<String, Set<Schema>> polymorphicTypeSchemas = new HashMap();
-
+    private final boolean allowSerializableFields = true;
     private boolean allowNullFields = false;
-    private boolean allowSerializableFields = true;
 
     public AvroSchemaGenerator(boolean allowNullFields, boolean useCustomCoders, boolean defaultsGenerated) {
         if (allowNullFields) {
