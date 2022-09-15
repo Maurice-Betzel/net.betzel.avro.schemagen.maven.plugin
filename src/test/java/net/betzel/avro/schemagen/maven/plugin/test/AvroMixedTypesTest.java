@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Properties;
 
 public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable {
 
@@ -20,7 +21,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
     public void testMixedTypesAllowNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         avroSchemaGenerator.setConversions(conversions);
-        avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType(Properties.class, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
         LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
         AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
@@ -107,13 +108,13 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
             avroMixedTypesRecord.exceptions = null;
             encode(avroSchemaGenerator.getReflectData(), avroMixedTypesRecordSchema, avroMixedTypesRecord);
         });
-        Assert.assertTrue(unresolvedUnionException.getMessage().contains("Not in union [{\"type\":\"array\",\"items\":[{\"type\":\"error\",\"name\":\"IOException\",\"namespace\":\"java.io\"," +
-                "\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\",\"name\":\"ArrayIndexOutOfBoundsException\"," +
-                "\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\",\"name\":\"Exception\"," +
-                "\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\",\"name\":\"IllegalArgumentException\"," +
-                "\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\",\"name\":\"InterruptedException\"," +
-                "\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\",\"name\":\"NullPointerException\"," +
-                "\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]}]}]: null (field=exceptions)"));
+        Assert.assertTrue(unresolvedUnionException.getMessage().contains("Not in union [{\"type\":\"array\",\"items\":[{\"type\":\"error\",\"name\":\"IOException\",\"namespace\":\"java.io\",\"fields\":[{\"name\":\"detailMessage\"," +
+                "\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\",\"name\":\"ArrayIndexOutOfBoundsException\",\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"]," +
+                "\"default\":null}]},{\"type\":\"error\",\"name\":\"Exception\",\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\"," +
+                "\"name\":\"IllegalArgumentException\",\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\"," +
+                "\"name\":\"InterruptedException\",\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]},{\"type\":\"error\"," +
+                "\"name\":\"NullPointerException\",\"namespace\":\"java.lang\",\"fields\":[{\"name\":\"detailMessage\",\"type\":[\"null\",\"string\"],\"default\":null}]}]," +
+                "\"java-class\":\"java.util.List\"}]: null (field=exceptions)"));
     }
 
 }

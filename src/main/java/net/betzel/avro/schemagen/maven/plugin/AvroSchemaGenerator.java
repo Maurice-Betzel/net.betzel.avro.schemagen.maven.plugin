@@ -171,7 +171,14 @@ public final class AvroSchemaGenerator {
 
             switch (oldFieldSchema.getType()) {
                 case ARRAY:
-                    newFieldSchema = getPolymorphicTypes(Schema.createArray(getPolymorphicTypes(oldFieldSchema.getElementType())));
+                    Schema polymorphicElementTypesSchema = getPolymorphicTypes(oldFieldSchema.getElementType());
+                    Schema polymorphicElementTypesArraySchema = Schema.createArray(polymorphicElementTypesSchema);
+                    // conserve original objects properties
+                    Map<String, Object> arrayProperties = oldFieldSchema.getObjectProps();
+                    for (Map.Entry<String, Object> arrayProperty : arrayProperties.entrySet()) {
+                        polymorphicElementTypesArraySchema.addProp(arrayProperty.getKey(), arrayProperty.getValue());
+                    }
+                    newFieldSchema = getPolymorphicTypes(polymorphicElementTypesArraySchema);
                     break;
                 case MAP:
                     newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));

@@ -8,6 +8,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -21,6 +22,7 @@ public class AvroMixedTypesRecord {
     List<Exception> exceptions;
     HashMap<String, Date> stringDateHashMap;
     ArrayList<RuntimeException> runtimeExceptions;
+    LinkedHashMap<String, String> stringLinkedHashMap;
 
     public AvroMixedTypesRecord() {
     }
@@ -41,5 +43,9 @@ public class AvroMixedTypesRecord {
         runtimeExceptions = new ArrayList(2);
         runtimeExceptions.add(new NullPointerException("2"));
         runtimeExceptions.add(new IllegalArgumentException("1"));
+        stringLinkedHashMap = new LinkedHashMap(2);
+        stringLinkedHashMap.put("key2", "value2");
+        stringLinkedHashMap.put("key1", "value1");
     }
+
 }

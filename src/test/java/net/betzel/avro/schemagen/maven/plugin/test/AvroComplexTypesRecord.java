@@ -37,7 +37,7 @@ public class AvroComplexTypesRecord {
     public LinkedHashSet<Integer> integerSet;
     public Map<String, Double> stringDoubleMap;
     public Map<String, Integer> stringIntegerMap;
-    public Map<String, List<String>> stringListStringMap;
+    public LinkedHashMap<String, List<String>> stringListStringMap;
 
     // Date and Time
     Date date;
