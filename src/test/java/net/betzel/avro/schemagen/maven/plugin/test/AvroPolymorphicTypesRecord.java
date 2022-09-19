@@ -7,13 +7,14 @@ import java.util.Map;
 
 public class AvroPolymorphicTypesRecord {
 
+    public Object object;
     public Throwable throwable;
     public Exception exception;
     public RuntimeException runtimeException;
     public Serializable serializable;
     public List<Throwable> throwables;
     public HashSet<Exception> exceptions;
-    public Map<String, Exception> exceptionMap;
     public List<Serializable> serializables;
+    public Map<String, Exception> exceptionMap;
 
 }

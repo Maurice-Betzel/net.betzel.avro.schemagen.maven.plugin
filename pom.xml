@@ -4,7 +4,7 @@
     <groupId>net.betzel</groupId>
     <artifactId>avro.schemagen.maven.plugin</artifactId>
     <packaging>maven-plugin</packaging>
-    <version>1.0.1</version>
+    <version>1.1.0</version>
 
     <name>net.betzel.avro.schemagen.maven.plugin Maven Mojo</name>
 

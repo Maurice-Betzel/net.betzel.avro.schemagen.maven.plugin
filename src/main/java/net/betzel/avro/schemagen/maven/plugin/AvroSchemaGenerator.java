@@ -9,7 +9,6 @@ import org.apache.avro.reflect.ReflectData;
 import org.apache.avro.specific.SpecificData;
 import org.apache.avro.util.ClassUtils;
 
-import java.io.Serializable;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,9 +36,9 @@ public final class AvroSchemaGenerator {
     private final ReflectData reflectData;
     private final RecordCache recordCache = new RecordCache();
     private final Map<String, Schema> customSchemas = new HashMap();
-    private final Map<String, Set<Schema>> polymorphicTypeSchemas = new HashMap();
-    private final boolean allowSerializableFields = true;
-    private boolean allowNullFields = false;
+    private final Map<String, Set<Schema>> globalPolymorphicTypeSchemas = new HashMap();
+    private final Map<String, Map<String, Set<Schema>>> fieldPolymorphicTypeSchemas = new HashMap();
+    private boolean allowNullFields;
 
     public AvroSchemaGenerator(boolean allowNullFields, boolean useCustomCoders, boolean defaultsGenerated) {
         if (allowNullFields) {
@@ -65,30 +64,42 @@ public final class AvroSchemaGenerator {
     }
 
     // register polymorphic types
-    public void declarePolymorphicType(Type... types) {
+    public void declarePolymorphicType(String fieldSymbol, Type... types) {
         // Declare a polymorphic type
         recordCache.clear();
         for (Type type : types) {
             Schema subtypeSchema = reflectData.getSchema(type);
-            // prepare for Serializable fields
-            if (type instanceof Serializable) {
-                Set<Schema> serializableTypes = polymorphicTypeSchemas.get(Serializable.class.getCanonicalName());
-                if (Objects.isNull(serializableTypes)) {
-                    serializableTypes = new HashSet();
-                    polymorphicTypeSchemas.put(Serializable.class.getCanonicalName(), serializableTypes);
-                }
-                serializableTypes.add(subtypeSchema);
-            }
             Class superType = ((Class) type).getSuperclass();
-            while (!superType.equals(Object.class)) {
-                String typeName = superType.getCanonicalName();
-                Set<Schema> subTypes = polymorphicTypeSchemas.get(typeName);
-                if (Objects.isNull(subTypes)) {
-                    subTypes = new HashSet();
-                    polymorphicTypeSchemas.put(typeName, subTypes);
+            if (Objects.isNull(fieldSymbol)) {
+                // global assigned polymorphic types
+                while (!superType.equals(Object.class)) {
+                    String superTypeName = superType.getCanonicalName();
+                    Set<Schema> subTypes = globalPolymorphicTypeSchemas.get(superTypeName);
+                    if (Objects.isNull(subTypes)) {
+                        subTypes = new HashSet();
+                    }
+                    subTypes.add(subtypeSchema);
+                    globalPolymorphicTypeSchemas.put(superTypeName, subTypes);
+                    superType = superType.getSuperclass();
                 }
-                subTypes.add(subtypeSchema);
-                superType = superType.getSuperclass();
+            } else {
+                // field assigned polymorphic types, parse to root
+                Map<String, Set<Schema>> fieldTypes = fieldPolymorphicTypeSchemas.get(fieldSymbol);
+                if (Objects.isNull(fieldTypes)) {
+                    fieldTypes = new HashMap();
+                    fieldPolymorphicTypeSchemas.put(fieldSymbol, fieldTypes);
+                }
+                while (Objects.nonNull(superType)) {
+                    String superTypeName = superType.getCanonicalName();
+                    Set<Schema> subFieldTypes = fieldTypes.get(superTypeName);
+                    if (Objects.isNull(subFieldTypes)) {
+                        subFieldTypes = new HashSet();
+                    }
+                    subFieldTypes.add(subtypeSchema);
+                    fieldTypes.put(superTypeName, subFieldTypes);
+                    superType = superType.getSuperclass();
+                }
+                fieldPolymorphicTypeSchemas.put(fieldSymbol, fieldTypes);
             }
         }
     }
@@ -96,13 +107,13 @@ public final class AvroSchemaGenerator {
     // Create a schema for type
     public Schema generateSchema(Class clazz) {
         Schema schema = reflectData.getSchema(clazz);
-        return polymorphicTypeSchemas.isEmpty() ? schema : polymorphizeSchema(schema);
+        return globalPolymorphicTypeSchemas.isEmpty() ? schema : polymorphizeSchema(schema);
     }
 
     // Create a protocol for interface
     public Protocol generateProtocol(Class clazz) {
         Protocol protocol = reflectData.getProtocol(clazz);
-        return polymorphicTypeSchemas.isEmpty() ? protocol : polymorphizeProtocol(protocol);
+        return globalPolymorphicTypeSchemas.isEmpty() ? protocol : polymorphizeProtocol(protocol);
     }
 
     public Schema polymorphizeSchema(Schema rootSchema) {
@@ -168,23 +179,24 @@ public final class AvroSchemaGenerator {
         for (Field field : schema.getFields()) {
             Schema newFieldSchema;
             Schema oldFieldSchema = field.schema();
+            String fieldSymbols = schema.getFullName() + "." + field.name();
 
             switch (oldFieldSchema.getType()) {
                 case ARRAY:
-                    Schema polymorphicElementTypesSchema = getPolymorphicTypes(oldFieldSchema.getElementType());
+                    Schema polymorphicElementTypesSchema = getPolymorphicTypes(oldFieldSchema.getElementType(), fieldSymbols);
                     Schema polymorphicElementTypesArraySchema = Schema.createArray(polymorphicElementTypesSchema);
                     // conserve original objects properties
                     Map<String, Object> arrayProperties = oldFieldSchema.getObjectProps();
                     for (Map.Entry<String, Object> arrayProperty : arrayProperties.entrySet()) {
                         polymorphicElementTypesArraySchema.addProp(arrayProperty.getKey(), arrayProperty.getValue());
                     }
-                    newFieldSchema = getPolymorphicTypes(polymorphicElementTypesArraySchema);
+                    newFieldSchema = getPolymorphicTypes(polymorphicElementTypesArraySchema, fieldSymbols);
                     break;
                 case MAP:
-                    newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType())));
+                    newFieldSchema = getPolymorphicTypes(Schema.createMap(getPolymorphicTypes(oldFieldSchema.getValueType(), fieldSymbols)), fieldSymbols);
                     break;
                 default:
-                    newFieldSchema = getPolymorphicTypes(oldFieldSchema);
+                    newFieldSchema = getPolymorphicTypes(oldFieldSchema, fieldSymbols);
                     break;
             }
             if (newFieldSchema.getTypes().get(0).getType().equals(Schema.Type.NULL)) {
@@ -196,7 +208,7 @@ public final class AvroSchemaGenerator {
         return recordCache.set(schema, newFields);
     }
 
-    public Schema getPolymorphicTypes(Schema schema) {
+    public Schema getPolymorphicTypes(Schema schema, String fieldSymbols) {
         // Get the polymorphic types for schema
         switch (schema.getType()) {
             case MAP:
@@ -231,7 +243,14 @@ public final class AvroSchemaGenerator {
             finalSchemaTypes.add(unionType);
             Collection<Schema> subTypes = null;
             if (isNamedType(unionType)) {
-                subTypes = polymorphicTypeSchemas.get(SpecificData.getClassName(unionType));
+                String className = SpecificData.getClassName(unionType);
+                // check field specific subtypes
+                Map<String, Set<Schema>>  fieldPolymorphicTypeSchemaMap = fieldPolymorphicTypeSchemas.get(fieldSymbols);
+                if(Objects.isNull(fieldPolymorphicTypeSchemaMap)) {
+                    subTypes = globalPolymorphicTypeSchemas.get(className);
+                } else {
+                    subTypes = fieldPolymorphicTypeSchemaMap.get(className);
+                }
             }
             if (Objects.isNull(subTypes)) {
                 continue;
@@ -352,7 +371,7 @@ public final class AvroSchemaGenerator {
     }
 
     public boolean hasPolymorphicTypeSchemas() {
-        return polymorphicTypeSchemas.size() > 0;
+        return globalPolymorphicTypeSchemas.size() > 0;
     }
 
 }

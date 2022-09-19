@@ -21,7 +21,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
     public void testMixedTypesAllowNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         avroSchemaGenerator.setConversions(conversions);
-        avroSchemaGenerator.declarePolymorphicType(Properties.class, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType(null ,Properties.class, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
         LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
         AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
@@ -36,7 +36,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
     public void testMixedTypesAllowNullFields2() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         avroSchemaGenerator.setConversions(conversions);
-        avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
         LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
         AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
@@ -53,7 +53,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
     public void testMixedTypesAllowNullFields3() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         avroSchemaGenerator.setConversions(conversions);
-        avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
         LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
         AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
@@ -70,7 +70,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
     public void testMixedTypesAllowNoneNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
         avroSchemaGenerator.setConversions(conversions);
-        avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
         LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
         AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
@@ -86,7 +86,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
         UnresolvedUnionException unresolvedUnionException = Assert.assertThrows(UnresolvedUnionException.class, () -> {
             AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
             avroSchemaGenerator.setConversions(conversions);
-            avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+            avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
             Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
             LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
             AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
@@ -101,7 +101,7 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
         UnresolvedUnionException unresolvedUnionException = Assert.assertThrows(UnresolvedUnionException.class, () -> {
             AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
             avroSchemaGenerator.setConversions(conversions);
-            avroSchemaGenerator.declarePolymorphicType(IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+            avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
             Schema avroMixedTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroMixedTypesRecord.class);
             LOGGER.info("Mixed types schema with null: {}", avroMixedTypesRecordSchema.toString(true));
             AvroMixedTypesRecord avroMixedTypesRecord = new AvroMixedTypesRecord(random, localDateTime);
