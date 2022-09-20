@@ -21,6 +21,7 @@ public class AvroMixedTypesRecord {
     Serializable serializable;
     List<Exception> exceptions;
     HashMap<String, Date> stringDateHashMap;
+    HashMap<String, Object> stringObjectHashMap;
     ArrayList<RuntimeException> runtimeExceptions;
     LinkedHashMap<String, String> stringLinkedHashMap;
 
@@ -40,6 +41,8 @@ public class AvroMixedTypesRecord {
         stringDateHashMap = new HashMap(2);
         stringDateHashMap.put("1", Date.from(ldt.toLocalDate().atStartOfDay().minusDays(3).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant()));
         stringDateHashMap.put("2", Date.from(ldt.toLocalDate().atStartOfDay().minusDays(5).atZone(ZoneId.systemDefault()).truncatedTo(ChronoUnit.DAYS).toInstant()));
+        stringObjectHashMap = new HashMap(1);
+        stringObjectHashMap.put("1", new IOException("3"));
         runtimeExceptions = new ArrayList(2);
         runtimeExceptions.add(new NullPointerException("2"));
         runtimeExceptions.add(new IllegalArgumentException("1"));
