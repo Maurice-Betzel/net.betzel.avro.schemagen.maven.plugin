@@ -63,7 +63,7 @@ public final class AvroSchemaGenerator {
         return String.join(", ", typeNames);
     }
 
-    // register polymorphic types
+    // Register polymorphic types
     public void declarePolymorphicType(String fieldSymbol, Type... types) {
         // Declare a polymorphic type
         recordCache.clear();
@@ -71,35 +71,52 @@ public final class AvroSchemaGenerator {
             Schema subtypeSchema = reflectData.getSchema(type);
             Class superType = ((Class) type).getSuperclass();
             if (Objects.isNull(fieldSymbol)) {
-                // global assigned polymorphic types
+                // Global assigned polymorphic types
                 while (!superType.equals(Object.class)) {
                     String superTypeName = superType.getCanonicalName();
                     Set<Schema> subTypes = globalPolymorphicTypeSchemas.get(superTypeName);
                     if (Objects.isNull(subTypes)) {
                         subTypes = new HashSet();
+                        globalPolymorphicTypeSchemas.put(superTypeName, subTypes);
                     }
                     subTypes.add(subtypeSchema);
-                    globalPolymorphicTypeSchemas.put(superTypeName, subTypes);
                     superType = superType.getSuperclass();
                 }
             } else {
-                // field assigned polymorphic types, parse to root
+                // Field assigned polymorphic types
                 Map<String, Set<Schema>> fieldTypes = fieldPolymorphicTypeSchemas.get(fieldSymbol);
                 if (Objects.isNull(fieldTypes)) {
                     fieldTypes = new HashMap();
                     fieldPolymorphicTypeSchemas.put(fieldSymbol, fieldTypes);
                 }
+                // add potential interface types
+                Class<?>[] interfaceClasses = ((Class<?>) type).getInterfaces();
+                HashSet typeInterfaceSet = new HashSet();
+                typeInterfaceSet.add(subtypeSchema);
+                for (Class interfaceClass : interfaceClasses) {
+                    fieldTypes.put(interfaceClass.getCanonicalName(), typeInterfaceSet);
+                }
+                // Parse including root
                 while (Objects.nonNull(superType)) {
                     String superTypeName = superType.getCanonicalName();
                     Set<Schema> subFieldTypes = fieldTypes.get(superTypeName);
                     if (Objects.isNull(subFieldTypes)) {
                         subFieldTypes = new HashSet();
+                        fieldTypes.put(superTypeName, subFieldTypes);
                     }
                     subFieldTypes.add(subtypeSchema);
-                    fieldTypes.put(superTypeName, subFieldTypes);
+                    Class<?>[] superInterfaceClasses = ((Class<?>) superType).getInterfaces();
+                    for (Class superInterfaceClass : superInterfaceClasses) {
+                        Set<Schema> superTypeInterfaceSet = fieldTypes.get(superInterfaceClass.getCanonicalName());
+                        if (Objects.isNull(superTypeInterfaceSet)) {
+                            superTypeInterfaceSet = new HashSet();
+                            fieldTypes.put(superInterfaceClass.getCanonicalName(), superTypeInterfaceSet);
+                        }
+                        superTypeInterfaceSet.add(subtypeSchema);
+                    }
                     superType = superType.getSuperclass();
                 }
-                fieldPolymorphicTypeSchemas.put(fieldSymbol, fieldTypes);
+
             }
         }
     }
@@ -244,9 +261,9 @@ public final class AvroSchemaGenerator {
             Collection<Schema> subTypes = null;
             if (isNamedType(unionType)) {
                 String className = SpecificData.getClassName(unionType);
-                // check field specific subtypes
-                Map<String, Set<Schema>>  fieldPolymorphicTypeSchemaMap = fieldPolymorphicTypeSchemas.get(fieldSymbols);
-                if(Objects.isNull(fieldPolymorphicTypeSchemaMap)) {
+                // check field specific subtypes first
+                Map<String, Set<Schema>> fieldPolymorphicTypeSchemaMap = fieldPolymorphicTypeSchemas.get(fieldSymbols);
+                if (Objects.isNull(fieldPolymorphicTypeSchemaMap)) {
                     subTypes = globalPolymorphicTypeSchemas.get(className);
                 } else {
                     subTypes = fieldPolymorphicTypeSchemaMap.get(className);

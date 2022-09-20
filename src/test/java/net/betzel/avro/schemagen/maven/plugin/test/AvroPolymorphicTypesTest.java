@@ -9,6 +9,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -26,6 +27,7 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         avroSchemaGenerator.setConversions(conversions);
         avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType("net.betzel.avro.schemagen.maven.plugin.test.AvroPolymorphicTypesRecord.serializables", IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
         avroSchemaGenerator.declarePolymorphicType("net.betzel.avro.schemagen.maven.plugin.test.AvroPolymorphicTypesRecord.object", String.class);
         Schema avroPolymorphicRecordSchema = avroSchemaGenerator.generateSchema(AvroPolymorphicTypesRecord.class);
         LOGGER.info("Polymorphic types schema allow null: {}", avroPolymorphicRecordSchema.toString(true));
@@ -54,7 +56,7 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         serializables.add(new InterruptedException("3"));
         serializables.add(new IllegalArgumentException("4"));
         serializables.add(new ArrayIndexOutOfBoundsException(5));
-        //avroPolymorphicTypesRecord.serializables = serializables;
+        avroPolymorphicTypesRecord.serializables = serializables;
         Map<String, Exception> exceptionMap = new HashMap(5);
         exceptionMap.put("A", new IOException("1"));
         exceptionMap.put("B", new NullPointerException("2"));
@@ -74,13 +76,15 @@ public class AvroPolymorphicTypesTest extends AbstractAvroTest implements Serial
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(false, false, false);
         avroSchemaGenerator.setConversions(conversions);
         avroSchemaGenerator.declarePolymorphicType(null, IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
-        avroSchemaGenerator.declarePolymorphicType("object", String.class);
+        avroSchemaGenerator.declarePolymorphicType("net.betzel.avro.schemagen.maven.plugin.test.AvroPolymorphicTypesRecord.serializables", IllegalArgumentException.class, NullPointerException.class, IOException.class, InterruptedException.class, ArrayIndexOutOfBoundsException.class);
+        avroSchemaGenerator.declarePolymorphicType("net.betzel.avro.schemagen.maven.plugin.test.AvroPolymorphicTypesRecord.serializable", EOFException.class);
+        avroSchemaGenerator.declarePolymorphicType("net.betzel.avro.schemagen.maven.plugin.test.AvroPolymorphicTypesRecord.object", String.class);
         Schema avroPolymorphicRecordSchema = avroSchemaGenerator.generateSchema(AvroPolymorphicTypesRecord.class);
         LOGGER.info("Polymorphic types schema without null: {}", avroPolymorphicRecordSchema.toString(true));
         AvroPolymorphicTypesRecord avroPolymorphicTypesRecord = new AvroPolymorphicTypesRecord();
         avroPolymorphicTypesRecord.object = "String object";
         avroPolymorphicTypesRecord.throwable = new IllegalArgumentException("Illegal Argument Exception");
-        avroPolymorphicTypesRecord.serializable = new IOException("10");
+        avroPolymorphicTypesRecord.serializable = new EOFException("10");
         avroPolymorphicTypesRecord.exception = new IOException("IO Exception");
         avroPolymorphicTypesRecord.runtimeException = new NullPointerException("Null pointer Exception");
         List<Throwable> throwables = new ArrayList(5);
