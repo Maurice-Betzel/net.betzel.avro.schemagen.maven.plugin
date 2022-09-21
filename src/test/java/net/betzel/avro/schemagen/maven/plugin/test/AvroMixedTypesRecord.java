@@ -25,7 +25,7 @@ public class AvroMixedTypesRecord {
     ArrayList<RuntimeException> runtimeExceptions;
     LinkedHashMap<String, String> stringLinkedHashMap;
 
-    public AvroMixedTypesRecord() {
+    private AvroMixedTypesRecord() {
     }
 
     public AvroMixedTypesRecord(Random random, LocalDateTime ldt) {

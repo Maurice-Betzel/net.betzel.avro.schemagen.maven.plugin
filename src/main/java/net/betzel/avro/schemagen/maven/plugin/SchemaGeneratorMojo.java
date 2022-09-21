@@ -50,7 +50,7 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
     @Parameter(property = "polymorphicClassFiles", required = false, readonly = false)
     List<String> polymorphicClassFiles;
     @Parameter(property = "fieldBoundPolymorphicClassFiles", required = false, readonly = false)
-    Map<String, List<String>> fieldBoundPolymorphicClassFiles;
+    Map<String, String> fieldBoundPolymorphicClassFiles;
     @Parameter(property = "targetSchemaPath", defaultValue = "${project.build.directory}/" + AVRO_INFO, required = false, readonly = false)
     String targetSchemaPath;
     @Parameter(defaultValue = "${project}", readonly = true)
@@ -118,29 +118,33 @@ public final class SchemaGeneratorMojo extends AbstractMojo {
                     schemaGenerator.declarePolymorphicType(null, types);
                 }
                 if (Objects.nonNull(fieldBoundPolymorphicClassFiles)) {
-                    for (Map.Entry<String, List<String>> entry : fieldBoundPolymorphicClassFiles.entrySet()) {
-                        String fieldString = entry.getKey();
+                    for (Map.Entry<String, String> entry : fieldBoundPolymorphicClassFiles.entrySet()) {
+                        String key = entry.getKey();
+                        String fieldString = key.substring(key.lastIndexOf(".") + 1, key.length());
                         Field matchedField = ReflectionUtils.getFieldByNameIncludingSuperclasses(fieldString, clazz);
                         if (Objects.isNull(matchedField)) {
                             List<Field> fields = ReflectionUtils.getFieldsIncludingSuperclasses(clazz);
                             for (Field field : fields) {
-                                if (fieldString.endsWith(field.getDeclaringClass().getName() + "." + field.getName())) ;
-                                matchedField = field;
-                                break;
+                                String classField = field.getDeclaringClass().getName() + "." + field.getName();
+                                if (entry.getKey().endsWith(classField)) {
+                                    matchedField = field;
+                                    break;
+                                }
                             }
                         }
                         if (Objects.isNull(matchedField)) {
                             throw new ClassNotFoundException("No class found containing field " + fieldString);
                         }
-                        List<String> typesList = entry.getValue();
-                        Type[] types = new Type[typesList.size()];
-                        for (int i = 0; i < typesList.size(); i++) {
-                            String polymorphicClassFile = typesList.get(i);
+                        String[] typesList = entry.getValue().trim().split("\\s*,+\\s*,*\\s*");
+                        Type[] types = new Type[typesList.length];
+                        for (int i = 0; i < typesList.length; i++) {
+                            String polymorphicClassFile = typesList[i];
                             Class polymorphicClazz = fileClassLoader.loadClass(polymorphicClassFile);
                             getLog().info("Adding polymorphic class " + polymorphicClazz.getCanonicalName() + " for field " + fieldString);
                             types[i] = polymorphicClazz;
                         }
-                        schemaGenerator.declarePolymorphicType(matchedField.getType() + "." + matchedField.getName(), types);
+                        // always set field on base class for Avro schema
+                        schemaGenerator.declarePolymorphicType(clazz.getCanonicalName() + "." + matchedField.getName(), types);
                     }
                 }
                 Schema schema = schemaGenerator.generateSchema(clazz);

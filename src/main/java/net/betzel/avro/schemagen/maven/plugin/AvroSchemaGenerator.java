@@ -116,7 +116,6 @@ public final class AvroSchemaGenerator {
                     }
                     superType = superType.getSuperclass();
                 }
-
             }
         }
     }

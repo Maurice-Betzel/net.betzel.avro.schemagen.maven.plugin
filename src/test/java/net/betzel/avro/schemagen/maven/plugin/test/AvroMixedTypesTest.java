@@ -40,7 +40,11 @@ public class AvroMixedTypesTest extends AbstractAvroTest implements Serializable
 
         @Override
         public boolean equals(HashMap a, HashMap b) {
-            return a.toString().equals(b.toString());
+            TreeMap<String, Object> leftTreeMap = new TreeMap<>();
+            leftTreeMap.putAll(a);
+            TreeMap<String, Object> rightTreeMap = new TreeMap<>();
+            rightTreeMap.putAll(b);
+            return leftTreeMap.toString().equals(rightTreeMap.toString());
         }
 
         @Override
