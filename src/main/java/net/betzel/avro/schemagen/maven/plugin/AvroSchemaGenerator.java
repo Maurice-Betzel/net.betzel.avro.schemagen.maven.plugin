@@ -89,7 +89,7 @@ public final class AvroSchemaGenerator {
                     fieldTypes = new HashMap();
                     fieldPolymorphicTypeSchemas.put(fieldSymbol, fieldTypes);
                 }
-                // add potential interface types
+                // Add potential interface types
                 Class<?>[] interfaceClasses = ((Class<?>) type).getInterfaces();
                 HashSet typeInterfaceSet = new HashSet();
                 typeInterfaceSet.add(subtypeSchema);

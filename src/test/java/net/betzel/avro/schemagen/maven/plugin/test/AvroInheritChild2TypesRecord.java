@@ -8,7 +8,6 @@ public final class AvroInheritChild2TypesRecord extends AvroInheritChild1TypesRe
     private LocalTime localTime;
 
     private AvroInheritChild2TypesRecord() {
-        //super();
     }
 
     public AvroInheritChild2TypesRecord(LocalDateTime localDateTime) {

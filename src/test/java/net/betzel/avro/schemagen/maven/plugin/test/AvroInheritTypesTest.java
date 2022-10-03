@@ -29,7 +29,7 @@ public class AvroInheritTypesTest extends AbstractAvroTest implements Serializab
     }
 
     @Test
-    public void testMixedTypesAllowNullFields1() throws IOException {
+    public void testInheritTypesAllowNullFields1() throws IOException {
         AvroSchemaGenerator avroSchemaGenerator = new AvroSchemaGenerator(true, false, false);
         avroSchemaGenerator.setConversions(conversions);
         Schema avroInheritChildTypesRecordSchema = avroSchemaGenerator.generateSchema(AvroInheritChild2TypesRecord.class);
